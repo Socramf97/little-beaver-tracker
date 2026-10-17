@@ -11,6 +11,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
         'little-beaver-tracker.db'
       );
 
+      await db.execAsync('PRAGMA foreign_keys = ON;');
       await db.execAsync(CREATE_TABLES_SQL);
 
       return db;
