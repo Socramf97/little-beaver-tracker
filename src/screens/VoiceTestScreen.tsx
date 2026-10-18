@@ -1,3 +1,5 @@
+// THIS IS TEMPORARY WILL DELETE LATER
+
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
@@ -9,6 +11,8 @@ export default function VoiceTestScreen() {
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState("");
+
+  // we subscribe to events and listen and get back information
 
   useSpeechRecognitionEvent("start", () => setListening(true));
   useSpeechRecognitionEvent("end", () => setListening(false));
@@ -31,8 +35,8 @@ export default function VoiceTestScreen() {
       lang: "en-US",
       interimResults: true,
       continuous: false,
-      contextualStrings: ["Emma", "Liam", "formula", "ounces", "diaper"],
-      requiresOnDeviceRecognition: true,
+      // later if we wanted to add specific listening tools
+      //   contextualStrings: ["Emma", "Liam", "formula", "ounces", "diaper"],
     });
   };
 

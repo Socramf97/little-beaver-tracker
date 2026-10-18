@@ -18,8 +18,10 @@ export default function HomeScreen() {
       <Text style={styles.note}>
         More features will be added here as the project develops.
       </Text>
+
+      {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={{ fontSize: 18, padding: 12 }}>
-        Voice test (dev button)
+        Voice test (dev button - temporary will delete )
       </Link>
     </View>
   );
