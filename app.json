@@ -8,7 +8,12 @@
     "scheme": "littlebeavertracker",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Little Beaver converts your voice commands to text.",
+        "NSMicrophoneUsageDescription": "Little Beaver uses the microphone to log baby care by voice."
+      },
+      "bundleIdentifier": "com.anonymous.little-beaver-tracker"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +22,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.littlebeavertracker"
     },
     "web": {
       "output": "static",
@@ -31,6 +40,16 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Little Beaver uses the microphone to log baby care by voice.",
+          "speechRecognitionPermission": "Little Beaver converts your voice commands to text.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
     ],
