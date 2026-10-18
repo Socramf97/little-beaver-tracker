@@ -1,8 +1,9 @@
 // HomeScreen.tsx
 // Basic home dashboard screen for the Little Beaver Tracker app.
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Link } from "expo-router";
 
 export default function HomeScreen() {
   return (
@@ -17,6 +18,9 @@ export default function HomeScreen() {
       <Text style={styles.note}>
         More features will be added here as the project develops.
       </Text>
+      <Link href="/voice-test" style={{ fontSize: 18, padding: 12 }}>
+        Voice test (dev button)
+      </Link>
     </View>
   );
 }
@@ -26,14 +30,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
     padding: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   subtitle: {
@@ -42,6 +46,6 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
   },
 });
