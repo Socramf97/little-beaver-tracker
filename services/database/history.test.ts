@@ -1,8 +1,8 @@
 
-import { getDatabase } from '../database';
-import { getEventHistory } from '../history';
+import { getDatabase } from './database';
+import { getEventHistory } from './history';
 
-jest.mock('../database', () => ({
+jest.mock('./database', () => ({
   getDatabase: jest.fn(),
 }));
 
@@ -153,7 +153,9 @@ describe('getEventHistory', () => {
         babyId: 'baby-1',
         startDate: 'not-a-date',
       })
-    ).rejects.toThrow('Dates must be valid ISO UTC timestamps.');
+    ).rejects.toThrow(
+      'Dates must be valid ISO UTC timestamps.'
+    );
   });
 
   test('returns an empty history when no events exist', async () => {
