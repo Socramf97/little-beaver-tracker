@@ -62,7 +62,7 @@ export function normalizeNumbers(text: string): string {
  * Case 1: Every number becomes a digit
  */
 
-function wordsToDigits(text: string): string {
+export function wordsToDigits(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
@@ -84,7 +84,7 @@ function wordsToDigits(text: string): string {
 const TENS = ["20", "30", "40", "50", "60", "70", "80", "90"];
 const ONES = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-function joinTensAndOnes(text: string): string {
+export function joinTensAndOnes(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
@@ -110,11 +110,11 @@ function joinTensAndOnes(text: string): string {
  * Case 3: Join hundreds -> Multiple the number before it
  */
 
-function isWholeNumber(word: string | undefined): boolean {
+export function isWholeNumber(word: string | undefined): boolean {
   return word !== undefined && /^\d+$/.test(word);
 }
 
-function joinHundreds(text: string): string {
+export function joinHundreds(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
@@ -156,7 +156,7 @@ function joinHundreds(text: string): string {
  * EX: "2 point 5" and "point 5" -> 0.5
  */
 
-function joinDecimals(text: string): string {
+export function joinDecimals(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
@@ -196,7 +196,7 @@ const FRACTION_SYMBOLS: Record<string, number> = {
   "¼": 0.25,
 };
 
-function addFractionsToNumber(text: string): string {
+export function addFractionsToNumber(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
@@ -248,7 +248,7 @@ function addFractionsToNumber(text: string): string {
  * # quarter ounce -> 0.25 ounce
  */
 
-function fractionOnItsOwn(text: string): string {
+export function fractionOnItsOwn(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
