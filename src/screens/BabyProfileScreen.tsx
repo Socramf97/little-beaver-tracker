@@ -1,7 +1,6 @@
 // Baby profile management screen
 
 import { useState } from "react";
-
 import {
     Button,
     StyleSheet,
@@ -12,7 +11,13 @@ import {
 
 export default function BabyProfilesScreen() {
 
-    const [babyName, setBabyName] = useState("");
+const [babyName, setBabyName] = useState("");
+
+const [babies, setBabies] = useState([
+  "Kelly",
+  "Blake",
+]);
+const [activeBaby, setActiveBaby] = useState("None Selected");
 
   return (
     <View style={styles.container}>
@@ -21,7 +26,7 @@ export default function BabyProfilesScreen() {
       </Text>
 
       <Text style={styles.note}>
-  Active Baby: None Selected
+  Active Baby: {activeBaby}
 </Text>
 
 <Text style={styles.note}>
@@ -32,9 +37,18 @@ export default function BabyProfilesScreen() {
   Baby Profiles
 </Text>
 
-<Text style={styles.note}>
-  No profiles found.
-</Text>
+{babies.map((baby) => (
+  <View key={baby}>
+    <Text style={styles.note}>
+      {baby}
+    </Text>
+
+    <Button
+      title="Select"
+      onPress={() => setActiveBaby(baby)}
+    />
+  </View>
+))}
 
 <Text style={styles.note}>
   --------------------
@@ -45,6 +59,8 @@ export default function BabyProfilesScreen() {
 </Text>
 <TextInput
   placeholder="Enter baby name"
+  value={babyName}
+  onChangeText={setBabyName}
 />
 <Button
   title="Create Baby"
