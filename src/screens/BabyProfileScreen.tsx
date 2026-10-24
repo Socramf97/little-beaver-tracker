@@ -47,6 +47,31 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
       title="Select"
       onPress={() => setActiveBaby(baby)}
     />
+
+    <Button
+      title="Delete"
+      onPress={() => {
+        setBabies(
+          babies.filter(
+            (currentBaby) => currentBaby !== baby
+          )
+        );
+      }}
+    />
+    <Button
+  title="Edit"
+  onPress={() => {
+    const updatedBabies = babies.map(
+      (currentBaby) =>
+        currentBaby === baby
+          ? `${currentBaby} (Edited)`
+          : currentBaby
+    );
+
+    setBabies(updatedBabies);
+  }}
+/>
+
   </View>
 ))}
 
@@ -65,6 +90,12 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
 <Button
   title="Create Baby"
   onPress={() => {
+    if (!babyName.trim()) return;
+
+    setBabies([...babies, babyName]);
+
+    setBabyName("");
+
     console.log(babyName);
   }}
 />
