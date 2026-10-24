@@ -28,8 +28,12 @@ export default function HomeScreen() {
       </Link>
       
       <Link href="/manual-feeding" style={{ fontSize: 18, padding: 12 }}>
-  Manual Feeding Entry
-</Link>
+        Manual Feeding Entry
+      </Link>
+
+      <Link href="/manual-diaper" style={{ fontSize: 18, padding: 12 }}>
+        Manual Diaper Entry
+      </Link>
     </View>
   );
 }
