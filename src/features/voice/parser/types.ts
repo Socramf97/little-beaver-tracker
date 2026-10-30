@@ -4,11 +4,11 @@ export type FeedType = "breast" | "bottle" | "formula";
 export type VolumeUnit = "oz" | "ml";
 export type MeasurementMetric = "weight" | "length" | "head";
 export type MeasurementUnit = "lb" | "kg" | "g" | "in" | "cm";
-
+export type BabyRef = { id: string; name: string };
 export type ParsedCommand =
   | {
       kind: "feeding";
-      babyName?: string;
+      baby?: BabyRef;
       feedType?: FeedType;
       amount?: number;
       unit?: VolumeUnit;
@@ -16,13 +16,13 @@ export type ParsedCommand =
     }
   | {
       kind: "diaper";
-      babyName?: string;
+      baby?: BabyRef;
       pee: boolean;
       poop: boolean;
     }
   | {
       kind: "measurement";
-      babyName?: string;
+      baby?: BabyRef;
       metric: MeasurementMetric;
       value?: number;
       unit?: MeasurementUnit;

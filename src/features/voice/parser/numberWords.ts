@@ -1,185 +1,41 @@
 // Converting a spoken number into a real number so we only need to deal with one format
-// EX: "Three and a half ounces" -> "3.5 ounces"
-// EX: "twenty five ml" -> "25 ml"
-// EX: "4 1/2oz" -> "4.5 oz"
-// EX: "half an ounce" -> "0.5 ounce"
 
 // Cases
-// 1. Single number word -> "three ounces" -> 3 ounces
-// 2. Tens + ones -> "twenty five ml" -> 25 ml
-// 3. Hundreds -> "one hundred twenty ml" -> 120 ml
-// 4. Decimal -> "two point five ounces" -> "2.5 ounces"
+// 1. Single number word -> "three ounces" -> 3 ounces -> wordsToNumbers
+// 2. Tens + ones -> "twenty five ml" -> 25 ml -> wordsToNumbers
+// 3. Hundreds -> "one hundred twenty ml" -> 120 ml -> wordsToNumbers
+// 4. Decimal -> "two point five ounces" -> "2.5 ounces" -> wordsToNumbers
 // 5. Number + fraction -> "Three and a half ounces", "4 1/2 oz" -> 3.5 ounces, 4.5 oz
 // 6. Fraction alone -> "half an ounce" -> 0.5 ounce
-
-const NUMBER_WORDS: Record<string, number> = {
-  zero: 0,
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-  eleven: 11,
-  twelve: 12,
-  thirteen: 13,
-  fourteen: 14,
-  fifteen: 15,
-  sixteen: 16,
-  seventeen: 17,
-  eighteen: 18,
-  nineteen: 19,
-  twenty: 20,
-  thirty: 30,
-  forty: 40,
-  fifty: 50,
-  sixty: 60,
-  seventy: 70,
-  eighty: 80,
-  ninety: 90,
-};
+import { wordsToNumbers } from "words-to-numbers";
 
 /**
  * Main Function Entry
  */
 
 export function normalizeNumbers(text: string): string {
-  let string = text;
-  string = wordsToDigits(string); // "twenty five" -> "20 5"
-  string = joinTensAndOnes(string); // "20 5" -> "25"
-  string = joinHundreds(string); // "1 hundred 20" -> "120"
-  string = joinDecimals(string); // "2 point 5" -> "2.5"
-  string = addFractionsToNumber(string); // "3 and a half", "4½" -> "3.5", "4.5"
-  string = fractionOnItsOwn(string); // "half an ounce" -> "0.5 an ounce"
-  return string;
+  let s = prepare(text);
+  s = String(wordsToNumbers(s));
+
+  s = addFractionsToNumber(s); // "3 and a half", "4½" -> "3.5", "4.5"
+  s = fractionOnItsOwn(s); // "half an ounce" -> "0.5 an ounce"
+  return s;
 }
 
-/**
- * Case 1: Every number becomes a digit
- */
-
-export function wordsToDigits(text: string): string {
-  const words = text.split(" ");
-  const results: string[] = [];
-
-  for (const word of words) {
-    if (word in NUMBER_WORDS) {
-      results.push(String(NUMBER_WORDS[word]));
-    } else {
-      results.push(word);
-    }
-  }
-  return results.join(" ");
+export function prepare(text: string): string {
+  return text
+    .toLowerCase() // 1
+    .replace(/(\d)([½¼¾⅓⅔])/g, "$1 $2") // 2
+    .replace(/(\d)([a-z])/g, "$1 $2") // 3
+    .replace(/-/g, " ") // 4
+    .replace(/[,!?]/g, "") // 5
+    .replace(/\.(?!\d)/g, "") // 6
+    .replace(/\s+/g, " ") // 7
+    .trim(); // 8
 }
-
-/**
- * Case 2: Join tens and ones
- * If there is a ten that follows a one, it must be combined
- */
-
-const TENS = ["20", "30", "40", "50", "60", "70", "80", "90"];
-const ONES = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-
-export function joinTensAndOnes(text: string): string {
-  const words = text.split(" ");
-  const results: string[] = [];
-
-  let i = 0;
-
-  while (i < words.length) {
-    const currentWord = words[i];
-    const nextWord = words[i + 1];
-
-    if (TENS.includes(currentWord) && ONES.includes(nextWord)) {
-      results.push(String(Number(currentWord) + Number(nextWord)));
-      i += 2;
-    } else {
-      results.push(currentWord);
-      i += 1;
-    }
-  }
-
-  return results.join(" ");
-}
-
-/**
- * Case 3: Join hundreds -> Multiple the number before it
- */
 
 export function isWholeNumber(word: string | undefined): boolean {
   return word !== undefined && /^\d+$/.test(word);
-}
-
-export function joinHundreds(text: string): string {
-  const words = text.split(" ");
-  const results: string[] = [];
-
-  let i = 0;
-
-  while (i < words.length) {
-    const currentWord = words[i];
-    const nextWord = words[i + 1];
-
-    if (isWholeNumber(currentWord) && nextWord === "hundred") {
-      let value = Number(currentWord) * 100; // "1 hundred" -> 100
-      let usedIndexes = 2; // "1" and hundred
-
-      // check about "and"
-
-      const after = words[i + 2];
-      const afterAnd = words[i + 3];
-
-      if (after === "and" && isWholeNumber(afterAnd)) {
-        value += Number(afterAnd);
-        usedIndexes = 4;
-      } else if (isWholeNumber(after)) {
-        value += Number(after);
-        usedIndexes = 3;
-      }
-      results.push(String(value));
-      i += usedIndexes;
-    } else {
-      results.push(currentWord);
-      i += 1;
-    }
-  }
-
-  return results.join(" ");
-}
-
-/**
- * Case 4: "Point" between two numbers is a decimal point
- * EX: "2 point 5" and "point 5" -> 0.5
- */
-
-export function joinDecimals(text: string): string {
-  const words = text.split(" ");
-  const results: string[] = [];
-
-  let i = 0;
-
-  while (i < words.length) {
-    const currentWord = words[i];
-    const nextWord = words[i + 1];
-
-    if (currentWord === "point" && isWholeNumber(nextWord)) {
-      const lastPushed = results[results.length - 1];
-      const prevWord = isWholeNumber(lastPushed) ? results.pop()! : "0";
-
-      const newValue = prevWord + "." + nextWord;
-      results.push(newValue);
-      i += 2;
-    } else {
-      results.push(currentWord);
-      i += 1;
-    }
-  }
-
-  return results.join(" ");
 }
 
 /**
@@ -188,13 +44,20 @@ export function joinDecimals(text: string): string {
  * EX: "4 1/2" -> "4.5"
  */
 
-const FRACTION_WORDS: Record<string, number> = { half: 0.5, quarter: 0.25 };
-const FRACTION_SYMBOLS: Record<string, number> = {
+const FRACTIONS: Record<string, number> = {
+  half: 0.5,
+  quarter: 0.25,
   "1/2": 0.5,
   "½": 0.5,
   "1/4": 0.25,
   "¼": 0.25,
 };
+
+// Returns the fraction's value, or undefined if the word isn't a fraction
+function getFraction(word: string | undefined): number | undefined {
+  if (word === undefined || !Object.hasOwn(FRACTIONS, word)) return undefined;
+  return FRACTIONS[word];
+}
 
 export function addFractionsToNumber(text: string): string {
   const words = text.split(" ");
@@ -206,31 +69,27 @@ export function addFractionsToNumber(text: string): string {
     const currentWord = words[i];
     const nextWord = words[i + 1];
 
-    // 3 and a half OR 3 and half
+    // 3 and a half OR 3 and half OR 3 and 1 half
     if (isWholeNumber(currentWord) && nextWord === "and") {
       let j = i + 2; // the word after "and"
 
-      if (words[j] === "a") {
+      if (words[j] === "a" || words[j] === "1") {
         j += 1;
-      } // skip the optional "a"
-      const fractionalWord = words[j];
-      if (fractionalWord !== undefined && fractionalWord in FRACTION_WORDS) {
-        results.push(
-          String(Number(currentWord) + FRACTION_WORDS[fractionalWord]),
-        );
+      } // skip the optional "a OR 1"
+      const fraction = getFraction(words[j]);
+      if (fraction !== undefined) {
+        results.push(String(Number(currentWord) + fraction));
         i = j + 1; // jump after fraction word
         continue;
       }
     }
 
     // "4 1/2 "
+    const fraction = getFraction(nextWord);
+    const isSymbol = nextWord !== undefined && /[\/½¼¾]/.test(nextWord);
 
-    if (
-      isWholeNumber(currentWord) &&
-      nextWord !== undefined &&
-      nextWord in FRACTION_SYMBOLS
-    ) {
-      results.push(String(Number(currentWord) + FRACTION_SYMBOLS[nextWord]));
+    if (isWholeNumber(currentWord) && isSymbol && fraction !== undefined) {
+      results.push(String(Number(currentWord) + fraction));
       i += 2;
       continue;
     }
@@ -244,7 +103,7 @@ export function addFractionsToNumber(text: string): string {
 
 /**
  * Case 6: Fraction on its own, no nnumber before it
- * EX: half an ounce -> 0.5 an ounce
+ * EX: half an ounce -> 0.5 ounce
  * # quarter ounce -> 0.25 ounce
  */
 
@@ -252,20 +111,43 @@ export function fractionOnItsOwn(text: string): string {
   const words = text.split(" ");
   const results: string[] = [];
 
-  for (const word of words) {
-    const value =
-      word in FRACTION_WORDS
-        ? FRACTION_WORDS[word]
-        : word in FRACTION_SYMBOLS
-          ? FRACTION_SYMBOLS[word]
-          : undefined;
+  let i = 0;
 
-    if (value === undefined) {
-      results.push(word);
+  while (i < words.length) {
+    const currentWord = words[i];
+    const value = getFraction(currentWord);
+
+    // "half and half" is the cream, not a number
+    if (
+      currentWord === "half" &&
+      words[i + 1] === "and" &&
+      words[i + 2] === "half"
+    ) {
+      results.push("half and half");
+      i += 3;
       continue;
     }
 
+    // regular word
+    if (value === undefined) {
+      results.push(currentWord);
+      i += 1;
+      continue;
+    }
+
+    // "a half" -> remove the "a" we already added
+    const lastWord = results[results.length - 1];
+    if (lastWord === "a" || lastWord === "an" || lastWord === "1") {
+      results.pop();
+    }
+
     results.push(String(value));
+    i += 1;
+
+    // "half an ounce" -> skip the "an"
+    if (words[i] === "a" || words[i] === "an") {
+      i += 1;
+    }
   }
 
   return results.join(" ");
