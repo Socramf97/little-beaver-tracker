@@ -1,5 +1,4 @@
-
-import { getDatabase } from './database';
+import { getDatabase } from "./database";
 
 export interface FeedingEvent {
   id: string;
@@ -24,7 +23,7 @@ export interface NewFeedingEvent {
 }
 
 export async function createFeedingEvent(
-  event: NewFeedingEvent
+  event: NewFeedingEvent,
 ): Promise<void> {
   const db = await getDatabase();
 
@@ -42,12 +41,12 @@ export async function createFeedingEvent(
       event.is_approximate ? 1 : 0,
       event.notes ?? null,
       event.timestamp ?? new Date().toISOString(),
-    ]
+    ],
   );
 }
 
 export async function getFeedingEventsByBaby(
-  babyId: string
+  babyId: string,
 ): Promise<FeedingEvent[]> {
   const db = await getDatabase();
 
@@ -55,6 +54,30 @@ export async function getFeedingEventsByBaby(
     `SELECT * FROM feeding_events
      WHERE baby_id = ?
      ORDER BY timestamp DESC`,
-    [babyId]
+    [babyId],
   );
+}
+
+export async function updateFeedingEvent(
+  event: NewFeedingEvent & { timestamp: string },
+): Promise<boolean> {
+  const db = await getDatabase();
+
+  const result = await db.runAsync(
+    `UPDATE feeding_events
+     SET baby_id = ?, feeding_type = ?, amount = ?, unit = ?,
+       is_approximate = ?, notes = ?, timestamp = ?
+      WHERE id = ?`,
+    [
+      event.baby_id,
+      event.feeding_type,
+      event.amount ?? null,
+      event.unit ?? null,
+      event.is_approximate ? 1 : 0,
+      event.notes ?? null,
+      event.timestamp,
+      event.id,
+    ],
+  );
+  return result.changes > 0;
 }
