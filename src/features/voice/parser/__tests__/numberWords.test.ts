@@ -45,4 +45,23 @@ describe("normalizeNumbers", () => {
       },
     );
   });
+
+  describe("'a' and 'an' are not numbers", () => {
+    test.each([
+      ["emma had a bottle", "emma had a bottle"],
+      ["emma nursed for a long time", "emma nursed for a long time"],
+      ["liam had a wet diaper", "liam had a wet diaper"],
+    ])("%s -> unchanged", (input, expected) => {
+      expect(normalizeNumbers(input)).toBe(expected);
+    });
+
+    test.each([
+      ["three and a half ounces", "3.5 ounces"],
+      ["a half ounce", "0.5 ounce"],
+      ["half an ounce", "0.5 ounce"],
+      ["twenty five ml", "25 ml"],
+    ])("numbers still convert: %s -> %s", (input, expected) => {
+      expect(normalizeNumbers(input)).toBe(expected);
+    });
+  });
 });

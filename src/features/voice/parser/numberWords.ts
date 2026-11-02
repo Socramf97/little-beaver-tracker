@@ -7,6 +7,8 @@
 // 4. Decimal -> "two point five ounces" -> "2.5 ounces" -> wordsToNumbers
 // 5. Number + fraction -> "Three and a half ounces", "4 1/2 oz" -> 3.5 ounces, 4.5 oz
 // 6. Fraction alone -> "half an ounce" -> 0.5 ounce
+// 7. Turns EVERY "a" into 1
+
 import { wordsToNumbers } from "words-to-numbers";
 
 /**
@@ -15,7 +17,7 @@ import { wordsToNumbers } from "words-to-numbers";
 
 export function normalizeNumbers(text: string): string {
   let s = prepare(text);
-  s = String(wordsToNumbers(s));
+  s = convertNumberWords(s);
 
   s = addFractionsToNumber(s); // "3 and a half", "4½" -> "3.5", "4.5"
   s = fractionOnItsOwn(s); // "half an ounce" -> "0.5 an ounce"
@@ -32,6 +34,38 @@ export function prepare(text: string): string {
     .replace(/\.(?!\d)/g, "") // 6
     .replace(/\s+/g, " ") // 7
     .trim(); // 8
+}
+
+// Every "a" or "an" is turned into 1. Need to separate, use the library, then add back
+export function convertNumberWords(text: string): string {
+  // 1. Hide "a" and "an" so the library can't turn them into 1
+  const hiddenWords: string[] = [];
+
+  for (const word of text.split(" ")) {
+    if (word === "a") {
+      hiddenWords.push("xxa");
+    } else if (word === "an") {
+      hiddenWords.push("xxan");
+    } else {
+      hiddenWords.push(word);
+    }
+  }
+
+  // 2. Let the library convert the number words
+  const converted = String(wordsToNumbers(hiddenWords.join(" ")));
+
+  // 3. Put "a" and "an" back
+  const result: string[] = [];
+  for (const word of converted.split(" ")) {
+    if (word === "xxa") {
+      result.push("a");
+    } else if (word === "xxan") {
+      result.push("an");
+    } else {
+      result.push(word);
+    }
+  }
+  return result.join(" ");
 }
 
 export function isWholeNumber(word: string | undefined): boolean {

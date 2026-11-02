@@ -1,5 +1,4 @@
-
-import { getDatabase } from './database';
+import { getDatabase } from "./database";
 
 export interface DiaperEvent {
   id: string;
@@ -17,9 +16,7 @@ export interface NewDiaperEvent {
   timestamp?: string;
 }
 
-export async function createDiaperEvent(
-  event: NewDiaperEvent
-): Promise<void> {
+export async function createDiaperEvent(event: NewDiaperEvent): Promise<void> {
   const db = await getDatabase();
 
   await db.runAsync(
@@ -32,12 +29,12 @@ export async function createDiaperEvent(
       event.diaper_type,
       event.notes ?? null,
       event.timestamp ?? new Date().toISOString(),
-    ]
+    ],
   );
 }
 
 export async function getDiaperEventsByBaby(
-  babyId: string
+  babyId: string,
 ): Promise<DiaperEvent[]> {
   const db = await getDatabase();
 
@@ -45,6 +42,6 @@ export async function getDiaperEventsByBaby(
     `SELECT * FROM diaper_events
      WHERE baby_id = ?
      ORDER BY timestamp DESC`,
-    [babyId]
+    [babyId],
   );
 }

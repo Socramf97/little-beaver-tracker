@@ -60,7 +60,7 @@ export function matchBabyName(
   babyNames: string[],
 ): string | undefined {
   const names = babyNames.map((n) => ({ original: n, lower: n.toLowerCase() }));
-  const cleanedWords = words.map(takeOutPossessive);
+  const cleanedWords = words.map((w) => takeOutPossessive(w.toLowerCase()));
 
   const joinedWord = " " + cleanedWords.join(" ") + " ";
 

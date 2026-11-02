@@ -5,6 +5,7 @@ export type VolumeUnit = "oz" | "ml";
 export type MeasurementMetric = "weight" | "length" | "head";
 export type MeasurementUnit = "lb" | "kg" | "g" | "in" | "cm";
 export type BabyRef = { id: string; name: string };
+export type CommandKind = "feeding" | "diaper" | "measurement" | "unknown";
 export type ParsedCommand =
   | {
       kind: "feeding";
@@ -35,9 +36,10 @@ export type MissingFields =
   | "feedType"
   | "amount"
   | "diaperContents"
-  | "measurementValue";
+  | "measurementValue"
+  | "unit";
 
-export interface ParseResult {
+export interface ParsedResult {
   command: ParsedCommand;
   missing: MissingFields[];
   // Trasncript is later used to read back to the UI
