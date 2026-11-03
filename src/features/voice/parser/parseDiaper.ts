@@ -1,5 +1,7 @@
 // Takes out diaper details such was was it pee, poop or both
 
+import { DiaperType } from "@/features/events/types";
+
 // Cases
 // 1. pee
 // 2. poop
@@ -32,15 +34,10 @@ const NEGATION_WORDS = new Set([
   "never",
 ]);
 
-export interface DiaperDetails {
-  pee: boolean;
-  poop: boolean;
-}
-
 /** Main function entry point */
-export function parseDiaper(words: string[]): DiaperDetails {
+export function parseDiaper(words: string[]): DiaperType | undefined {
   if (words.some((w) => BOTH_WORDS.has(w))) {
-    return { pee: true, poop: true };
+    return "both";
   }
 
   let pee = appears(words, PEE_WORDS);
@@ -49,8 +46,17 @@ export function parseDiaper(words: string[]): DiaperDetails {
   const numSaid = findNumbersAfterWord(words);
   if (numSaid.one) pee = true;
   if (numSaid.two) poop = true;
+  if (pee && !poop) {
+    return "pee";
+  }
 
-  return { pee, poop };
+  if (!pee && poop) {
+    return "poop";
+  }
+
+  if (pee && poop) return "both";
+
+  return undefined;
 }
 
 // HELPERS

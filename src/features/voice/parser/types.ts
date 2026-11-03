@@ -1,16 +1,20 @@
 // OUTPUT OF VOICE PARSER
+import type {
+  DiaperType,
+  FeedingType,
+  VolumeUnit,
+} from "@/features/events/types";
 
-export type FeedType = "breast" | "bottle" | "formula";
-export type VolumeUnit = "oz" | "ml";
 export type MeasurementMetric = "weight" | "length" | "head";
 export type MeasurementUnit = "lb" | "kg" | "g" | "in" | "cm";
 export type BabyRef = { id: string; name: string };
 export type CommandKind = "feeding" | "diaper" | "measurement" | "unknown";
+
 export type ParsedCommand =
   | {
       kind: "feeding";
       baby?: BabyRef;
-      feedType?: FeedType;
+      feedType?: FeedingType;
       amount?: number;
       unit?: VolumeUnit;
       approximate: boolean;
@@ -18,8 +22,7 @@ export type ParsedCommand =
   | {
       kind: "diaper";
       baby?: BabyRef;
-      pee: boolean;
-      poop: boolean;
+      diaperType?: DiaperType;
     }
   | {
       kind: "measurement";
@@ -31,17 +34,8 @@ export type ParsedCommand =
     }
   | { kind: "unknown" };
 
-export type MissingFields =
-  | "babyName"
-  | "feedType"
-  | "amount"
-  | "diaperContents"
-  | "measurementValue"
-  | "unit";
-
 export interface ParsedResult {
   command: ParsedCommand;
-  missing: MissingFields[];
   // Trasncript is later used to read back to the UI
   transcript: string;
 }

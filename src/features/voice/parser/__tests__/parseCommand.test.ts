@@ -28,7 +28,7 @@ describe("feeding", () => {
         baby: LIAM,
         feedType: "bottle",
         amount: 120,
-        unit: "ml",
+        unit: "mL",
         approximate: false,
       },
     },
@@ -64,7 +64,6 @@ describe("feeding", () => {
   ])("$say", ({ say, expected }) => {
     const result = parseCommands(say, BABIES);
     expect(result.command).toEqual(expected);
-    expect(result.missing).toEqual([]);
   });
 });
 
@@ -72,20 +71,19 @@ describe("diaper", () => {
   test.each([
     {
       say: "Liam had a wet diaper",
-      expected: { kind: "diaper", baby: LIAM, pee: true, poop: false },
+      expected: { kind: "diaper", baby: LIAM, diaperType: "pee" },
     },
     {
       say: "Emma's diaper was wet but no poop",
-      expected: { kind: "diaper", baby: EMMA, pee: true, poop: false },
+      expected: { kind: "diaper", baby: EMMA, diaperType: "pee" },
     },
     {
       say: "Liam peed and pooped",
-      expected: { kind: "diaper", baby: LIAM, pee: true, poop: true },
+      expected: { kind: "diaper", baby: LIAM, diaperType: "both" },
     },
   ])("$say", ({ say, expected }) => {
     const result = parseCommands(say, BABIES);
     expect(result.command).toEqual(expected);
-    expect(result.missing).toEqual([]);
   });
 });
 
@@ -100,7 +98,6 @@ describe("missing information", () => {
         unit: "oz",
         approximate: false,
       },
-      missing: ["babyName"],
     },
     {
       say: "Emma had some formula",
@@ -110,7 +107,6 @@ describe("missing information", () => {
         feedType: "formula",
         approximate: false,
       },
-      missing: ["amount"],
     },
     {
       say: "Emma had three ounces",
@@ -121,23 +117,19 @@ describe("missing information", () => {
         unit: "oz",
         approximate: false,
       },
-      missing: ["feedType"],
     },
     {
       say: "Changed Liam's diaper",
-      expected: { kind: "diaper", baby: LIAM, pee: false, poop: false },
-      missing: ["diaperContents"],
+      expected: { kind: "diaper", baby: LIAM, diaperType: undefined },
     },
-  ])("$say -> missing $missing", ({ say, expected, missing }) => {
+  ])("$say -> missing $missing", ({ say, expected }) => {
     const result = parseCommands(say, BABIES);
     expect(result.command).toEqual(expected);
-    expect(result.missing).toEqual(missing);
   });
 
   test("only one baby: the name isn't needed", () => {
     const result = parseCommands("had three ounces of formula", [EMMA]);
     expect(result.command).toMatchObject({ kind: "feeding", baby: EMMA });
-    expect(result.missing).toEqual([]);
   });
 });
 
@@ -149,7 +141,6 @@ describe("unknown", () => {
   ])("%j -> unknown", (say) => {
     const result = parseCommands(say, BABIES);
     expect(result.command).toEqual({ kind: "unknown" });
-    expect(result.missing).toEqual([]);
   });
 });
 

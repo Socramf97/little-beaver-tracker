@@ -5,13 +5,7 @@ import { matchBabyName } from "./matchBabyName";
 import { normalizeNumbers } from "./numberWords";
 import { parseDiaper } from "./parseDiaper";
 import { parseFeeding } from "./parseFeeding";
-import {
-  BabyRef,
-  CommandKind,
-  MissingFields,
-  ParsedCommand,
-  ParsedResult,
-} from "./types.js";
+import { BabyRef, CommandKind, ParsedCommand, ParsedResult } from "./types.js";
 
 const FEEDING_WORDS = new Set([
   "fed",
@@ -129,43 +123,27 @@ const NOT_MEASUREMENT_WORDS = new Set([
 export function parseCommands(text: string, babies: BabyRef[]): ParsedResult {
   const words = cleanWords(text);
   const cleaned_words = words.split(" ").filter(Boolean);
-  const missing: MissingFields[] = [];
 
   const kind = findCommandKind(cleaned_words);
 
   if (kind === "unknown") {
-    return { command: { kind: "unknown" }, missing: missing, transcript: text };
+    return { command: { kind: "unknown" }, transcript: text };
   }
 
   const baby = findBaby(cleaned_words, babies);
-  if (!baby) {
-    missing.push("babyName");
-  }
 
   if (kind === "diaper") {
     const details = parseDiaper(cleaned_words);
-    if (!details.pee && !details.poop) {
-      missing.push("diaperContents");
-    }
 
     const command: ParsedCommand = {
       kind: "diaper",
       baby,
-      ...details,
+      diaperType: details,
     };
 
-    return { command, missing, transcript: text };
+    return { command, transcript: text };
   } else if (kind === "feeding") {
     const details = parseFeeding(cleaned_words);
-    if (details.feedType === undefined) {
-      missing.push("feedType");
-    }
-    if (details.amount !== undefined && details.unit === undefined) {
-      missing.push("unit");
-    }
-
-    if (details.feedType !== "breast" && details.amount === undefined)
-      missing.push("amount");
 
     const command: ParsedCommand = {
       kind: "feeding",
@@ -173,9 +151,9 @@ export function parseCommands(text: string, babies: BabyRef[]): ParsedResult {
       ...details,
       approximate: cleaned_words.some((w) => APPROX_WORDS.has(w)),
     };
-    return { command, missing, transcript: text };
+    return { command, transcript: text };
   }
-  return { command: { kind: "unknown" }, missing: missing, transcript: text };
+  return { command: { kind: "unknown" }, transcript: text };
 }
 
 // HELPERS

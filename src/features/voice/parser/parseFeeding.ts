@@ -1,6 +1,6 @@
 // Pulls out the feeding details
 
-import type { FeedType, VolumeUnit } from "./types";
+import type { FeedingType, VolumeUnit } from "@/features/events/types";
 
 // Cases
 // 1. Formula:           "emma had 3 ounces of formula"   -> formula, 3 oz
@@ -44,7 +44,7 @@ const TIME_WORDS = new Set([
 ]);
 
 export interface FeedingDetails {
-  feedType?: FeedType;
+  feedType?: FeedingType;
   amount?: number;
   unit?: VolumeUnit;
 }
@@ -62,8 +62,8 @@ export function parseFeeding(text: string[]): FeedingDetails {
 
 // HELPERS
 
-export function findFeedType(text: string[]): FeedType | undefined {
-  let feedType: FeedType | undefined;
+export function findFeedType(text: string[]): FeedingType | undefined {
+  let feedType: FeedingType | undefined;
   if (text.some((w) => FORMULA_WORDS.has(w))) {
     return "formula";
   }
@@ -119,7 +119,7 @@ function toUnit(word: string): VolumeUnit | undefined {
     return unit;
   }
   if (ML_WORDS.has(word)) {
-    unit = "ml";
+    unit = "mL";
     return unit;
   }
   return unit;

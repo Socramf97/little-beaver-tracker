@@ -16,9 +16,9 @@ describe("Case 1: formula", () => {
     ],
     [
       "emma had twenty ml of formula",
-      { feedType: "formula", amount: 20, unit: "ml" },
+      { feedType: "formula", amount: 20, unit: "mL" },
     ],
-    ["120 cc of formula", { feedType: "formula", amount: 120, unit: "ml" }], // cc = ml
+    ["120 cc of formula", { feedType: "formula", amount: 120, unit: "mL" }], // cc = ml
   ])("%s", (text, expected) => {
     expect(parseFeeding(toWords(text))).toEqual(expected);
   });
@@ -28,7 +28,7 @@ describe("Case 2: bottle / milk", () => {
   test.each([
     [
       "liam drank 120 ml of breast milk",
-      { feedType: "bottle", amount: 120, unit: "ml" },
+      { feedType: "bottle", amount: 120, unit: "mL" },
     ],
     ["emma had a 4 oz bottle", { feedType: "bottle", amount: 4, unit: "oz" }],
     ["emma had 4 ounce bottle", { feedType: "bottle", amount: 4, unit: "oz" }], // singular unit
@@ -60,7 +60,7 @@ describe("Case 3: nursing", () => {
 describe("Case 4: amount, no type", () => {
   test.each([
     ["emma had three ounces", { amount: 3, unit: "oz" }],
-    ["emma had 120ml", { amount: 120, unit: "ml" }],
+    ["emma had 120ml", { amount: 120, unit: "mL" }],
   ])("%s", (text, expected) => {
     expect(parseFeeding(toWords(text))).toEqual(expected);
   });

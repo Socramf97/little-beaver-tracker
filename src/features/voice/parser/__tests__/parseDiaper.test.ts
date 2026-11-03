@@ -7,10 +7,10 @@ function toWords(text: string): string[] {
   return text.split(" ").filter(Boolean);
 }
 
-const PEE = { pee: true, poop: false };
-const POOP = { pee: false, poop: true };
-const BOTH = { pee: true, poop: true };
-const NEITHER = { pee: false, poop: false };
+const PEE = "pee";
+const POOP = "poop";
+const BOTH = "both";
+const NEITHER = undefined;
 
 // ---------- Cases ----------
 
