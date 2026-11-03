@@ -36,6 +36,12 @@ export default function ManualDiaperScreen() {
         <Button
           title="Save Diaper Event"
           onPress={() => {
+
+            if (!diaperType.trim()) {
+              alert("Please enter a diaper type");
+              return;
+            }
+
             console.log("Diaper Type:", diaperType);
             console.log("Notes:", notes);
           }}

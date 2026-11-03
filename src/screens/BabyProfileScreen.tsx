@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import {
-    Button,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Button,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 
 export default function BabyProfilesScreen() {
@@ -14,10 +14,11 @@ export default function BabyProfilesScreen() {
 const [babyName, setBabyName] = useState("");
 
 const [babies, setBabies] = useState([
-  "Kelly",
-  "Blake",
+  { id: "1", name: "Kelly" },
+  { id: "2", name: "Blake" },
 ]);
-const [activeBaby, setActiveBaby] = useState("None Selected");
+
+const [activeBaby, setActiveBaby] = useState<any>(null);
 
   return (
     <View style={styles.container}>
@@ -26,8 +27,12 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
       </Text>
 
       <Text style={styles.note}>
-  Active Baby: {activeBaby}
-</Text>
+        Active Baby: {activeBaby ? activeBaby.name : "None Selected"}
+      </Text>
+
+      <Text style={styles.note}>
+        Baby ID: {activeBaby ? activeBaby.id : "None"}
+      </Text>
 
 <Text style={styles.note}>
   --------------------
@@ -38,9 +43,9 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
 </Text>
 
 {babies.map((baby) => (
-  <View key={baby}>
+  <View key={baby.id}>
     <Text style={styles.note}>
-      {baby}
+      {baby.name}
     </Text>
 
     <Button
@@ -53,7 +58,7 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
       onPress={() => {
         setBabies(
           babies.filter(
-            (currentBaby) => currentBaby !== baby
+            (currentBaby) => currentBaby.id !== baby.id
           )
         );
       }}
@@ -62,11 +67,14 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
   title="Edit"
   onPress={() => {
     const updatedBabies = babies.map(
-      (currentBaby) =>
-        currentBaby === baby
-          ? `${currentBaby} (Edited)`
-          : currentBaby
-    );
+  (currentBaby) =>
+    currentBaby.id === baby.id
+      ? {
+          ...currentBaby,
+          name: currentBaby.name + " (Edited)",
+        }
+      : currentBaby
+);
 
     setBabies(updatedBabies);
   }}
@@ -92,7 +100,14 @@ const [activeBaby, setActiveBaby] = useState("None Selected");
   onPress={() => {
     if (!babyName.trim()) return;
 
-    setBabies([...babies, babyName]);
+    setBabies([
+  ...babies,
+  {
+    id: Date.now().toString(),
+    name: babyName,
+  },
+]);
+
 
     setBabyName("");
 
