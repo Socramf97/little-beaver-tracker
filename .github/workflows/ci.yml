@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  # Triggers  workflow on push or pull request events on the main branch
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+  # Allows workflow to run manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Sequence of tasks that will be executed
+    steps:
+      # Downloads repo
+      - uses: actions/checkout@v5
+
+      # Installs correct Node Version
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # Installs packages from package-lock.json
+      - run: npm ci
+
+      # Runs linter
+      - run: npm run lint
+
+      # Checks for TypeScript errors
+      - run: npx tsc --noEmit
+
+      # Runs tests
+      - run: npx jest --ci --passWithNoTests

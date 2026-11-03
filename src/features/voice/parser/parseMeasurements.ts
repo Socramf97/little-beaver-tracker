@@ -35,3 +35,42 @@ export interface MeasurementDetails {
   value?: number;
   unit?: MeasurementUnit;
 }
+
+/** Main Function entry point */
+// export function parseMeasurement(words: string[]): MeasurementDetails {
+//   const metric = findMetric(words);
+
+//   if (metric === "weight") {
+//   }
+// }
+
+// HELPERS
+
+function isNumber(word: string | undefined): boolean {
+  return word !== undefined && /^\d+(\.\d+)?$/.test(word);
+}
+
+export function findMetric(words: string[]): MeasurementMetric {
+  if (words.some((w) => HEAD_WORDS.has(w))) return "head";
+
+  const isWeight = words.some(
+    (w) =>
+      WEIGHT_WORDS.has(w) ||
+      POUND_WORDS.has(w) ||
+      KG_WORDS.has(w) ||
+      GRAM_WORDS.has(w),
+  );
+  if (isWeight) return "weight";
+
+  return "length";
+}
+
+// export function findWeight(words: string[]): {
+//   value?: number;
+//   unit?: MeasurementUnit;
+// } {}
+
+// export function findLength(words: string[]): {
+//   value?: number;
+//   unit?: MeasurementUnit;
+// } {}
