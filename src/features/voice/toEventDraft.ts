@@ -1,5 +1,5 @@
 import { EventDraft } from "../events/types";
-import { ParsedCommand } from "./parser/types";
+import { ParsedCommand } from "./types";
 
 // Turns what the voice parser took and turn it into an event using EventService
 

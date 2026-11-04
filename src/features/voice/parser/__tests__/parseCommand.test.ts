@@ -1,5 +1,5 @@
+import type { BabyRef } from "../../types";
 import { parseCommands } from "../parseCommand";
-import type { BabyRef } from "../types";
 
 // Number conversion is tested in numberWords.test.ts,
 // name matching in matchBabyName.test.ts.

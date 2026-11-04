@@ -1,5 +1,5 @@
 // Takes out measurement details, which metric, and the value.
-import type { MeasurementMetric, MeasurementUnit } from "./types";
+import type { MeasurementMetric, MeasurementUnit } from "../types";
 
 // Cases
 // 1. Weight, Pounds: "emma weighs 9 pounds" -> weight, 9 lb

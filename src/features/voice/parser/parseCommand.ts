@@ -1,11 +1,11 @@
 // 1. Clean the string
 // 2. Find the baby
 // 3. parse either feeding, diaper, or measurement
+import { BabyRef, CommandKind, ParsedCommand, ParsedResult } from "../types";
 import { matchBabyName } from "./matchBabyName";
 import { normalizeNumbers } from "./numberWords";
 import { parseDiaper } from "./parseDiaper";
 import { parseFeeding } from "./parseFeeding";
-import { BabyRef, CommandKind, ParsedCommand, ParsedResult } from "./types.js";
 
 const FEEDING_WORDS = new Set([
   "fed",
