@@ -1,3 +1,4 @@
+import { toCm, toKg } from "@/utils/units";
 import { EventDraft } from "../events/types";
 import { ParsedCommand } from "./types";
 
@@ -24,7 +25,23 @@ export function toEventDraft(command: ParsedCommand): EventDraft | undefined {
       };
 
     case "measurement":
-      return {};
+      const draft: EventDraft = {
+        kind: "measurement",
+        babyId: command.baby?.id,
+      };
+
+      if (command.value === undefined || command.unit === undefined) {
+        return draft;
+      }
+
+      if (command.metric === "weight") {
+        draft.weightKg = toKg(command.value, command.unit);
+      } else if (command.metric === "length") {
+        draft.lengthCm = toCm(command.value, command.unit);
+      } else {
+        draft.headCircumferenceCm = toCm(command.value, command.unit);
+      }
+      return draft;
 
     case "unknown":
       return undefined;

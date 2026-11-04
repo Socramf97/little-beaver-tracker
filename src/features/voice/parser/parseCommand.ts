@@ -6,6 +6,7 @@ import { matchBabyName } from "./matchBabyName";
 import { normalizeNumbers } from "./numberWords";
 import { parseDiaper } from "./parseDiaper";
 import { parseFeeding } from "./parseFeeding";
+import { parseMeasurement } from "./parseMeasurements";
 
 const FEEDING_WORDS = new Set([
   "fed",
@@ -147,6 +148,16 @@ export function parseCommands(text: string, babies: BabyRef[]): ParsedResult {
 
     const command: ParsedCommand = {
       kind: "feeding",
+      baby,
+      ...details,
+      approximate: cleaned_words.some((w) => APPROX_WORDS.has(w)),
+    };
+    return { command, transcript: text };
+  } else if (kind === "measurement") {
+    const details = parseMeasurement(cleaned_words);
+
+    const command: ParsedCommand = {
+      kind: "measurement",
       baby,
       ...details,
       approximate: cleaned_words.some((w) => APPROX_WORDS.has(w)),

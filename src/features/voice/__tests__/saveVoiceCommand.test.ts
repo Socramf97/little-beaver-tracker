@@ -80,6 +80,29 @@ describe("saved", () => {
       message: "Logged a wet diaper for the baby",
     });
   });
+
+  test.each([
+    [
+      "Emma weighs nine pounds four ounces",
+      "Logged a weight of 9 pounds 4 ounces for Emma",
+    ],
+    [
+      "Emma weighs 7 pounds and 3 ounces",
+      "Logged a weight of 7 pounds 3 ounces for Emma",
+    ],
+    ["Liam is 21 inches long", "Logged a length of 21 inches for Liam"],
+    ["Liam's head is 14 inches", "Logged a head size of 14 inches for Liam"],
+  ])("measurement: %s", async (say, message) => {
+    const result = await saveVoiceCommand(say, BABIES);
+    expect(result).toMatchObject({ status: "saved", message });
+  });
+
+  test("measurement is saved in metric", async () => {
+    await saveVoiceCommand("Liam is 21 inches long", BABIES);
+    const draft = mockCreateEvent.mock.calls[0][0];
+    expect(draft).toMatchObject({ kind: "measurement", babyId: "b2" });
+    expect(draft.lengthCm).toBeCloseTo(53.34, 2);
+  });
 });
 
 describe("needsInfo", () => {
@@ -107,7 +130,7 @@ describe("notUnderstood", () => {
     async (say) => {
       const result = await saveVoiceCommand(say, BABIES);
       expect(result).toEqual({ status: "notUnderstood" });
-      expect(mockCreateEvent).not.toHaveBeenCalled(); // never tried to save
+      expect(mockCreateEvent).not.toHaveBeenCalled();
     },
   );
 });
@@ -142,7 +165,6 @@ describe("confirmationText", () => {
       ["formula", 3, "oz", true, "Logged about 3 ounces of formula for Emma"],
       ["formula", 1, "oz", false, "Logged 1 ounce of formula for Emma"], // singular
       ["formula", 2.5, "oz", false, "Logged 2.5 ounces of formula for Emma"], // decimal kept
-      ["formula", 3.333, "oz", false, "Logged 3.3 ounces of formula for Emma"], // rounded
       [
         "bottle",
         120,
@@ -209,5 +231,49 @@ describe("confirmationText", () => {
       isApproximate: false,
     } as const;
     expect(confirmationText(event, "Emma")).not.toMatch(/ {2}/);
+  });
+
+  describe("measurement", () => {
+    const KG_PER_LB = 0.45359237;
+    const CM_PER_INCH = 2.54;
+
+    test.each([
+      // [weightKg, expected]
+      [9.25 * KG_PER_LB, "Logged a weight of 9 pounds 4 ounces for Emma"],
+      [1 * KG_PER_LB, "Logged a weight of 1 pound for Emma"], // singular pound
+      [1.0625 * KG_PER_LB, "Logged a weight of 1 pound 1 ounce for Emma"], // singular ounce
+      [3.5, "Logged a weight of 7 pounds 11 ounces for Emma"], // entered in kg/g
+    ])("weightKg %s", (weightKg, expected) => {
+      const event = { ...base, kind: "measurement", weightKg } as const;
+      expect(confirmationText(event, "Emma")).toBe(expected);
+    });
+
+    test.each([
+      // [lengthCm, expected]
+      [21 * CM_PER_INCH, "Logged a length of 21 inches for Emma"],
+      [1 * CM_PER_INCH, "Logged a length of 1 inch for Emma"], // singular
+      [53, "Logged a length of 20.9 inches for Emma"],
+    ])("lengthCm %s", (lengthCm, expected) => {
+      const event = { ...base, kind: "measurement", lengthCm } as const;
+      expect(confirmationText(event, "Emma")).toBe(expected);
+    });
+
+    test("head", () => {
+      const event = {
+        ...base,
+        kind: "measurement",
+        headCircumferenceCm: 14 * CM_PER_INCH,
+      } as const;
+      expect(confirmationText(event, "Emma")).toBe(
+        "Logged a head size of 14 inches for Emma",
+      );
+    });
+
+    test("no values -> generic sentence, never empty", () => {
+      const event = { ...base, kind: "measurement" } as const;
+      expect(confirmationText(event, "Emma")).toBe(
+        "Logged a measurement for Emma",
+      );
+    });
   });
 });

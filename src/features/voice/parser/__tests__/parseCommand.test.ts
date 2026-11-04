@@ -134,11 +134,7 @@ describe("missing information", () => {
 });
 
 describe("unknown", () => {
-  test.each([
-    "Emma weighs nine pounds four ounces",
-    "What's the weather today",
-    "",
-  ])("%j -> unknown", (say) => {
+  test.each(["What's the weather today", ""])("%j -> unknown", (say) => {
     const result = parseCommands(say, BABIES);
     expect(result.command).toEqual({ kind: "unknown" });
   });
@@ -147,4 +143,111 @@ describe("unknown", () => {
 test("keeps the original transcript", () => {
   const say = "EMMA had 3 oz. of formula!";
   expect(parseCommands(say, BABIES).transcript).toBe(say);
+});
+
+describe("measurement", () => {
+  test.each([
+    {
+      say: "Emma weighs nine pounds four ounces", // has "ounces", but must NOT be a feeding
+      expected: {
+        kind: "measurement",
+        baby: EMMA,
+        metric: "weight",
+        value: 9.25,
+        unit: "lb",
+        approximate: false,
+      },
+    },
+    {
+      say: "Emma weighs 120 ounces", // ounces alone -> pounds
+      expected: {
+        kind: "measurement",
+        baby: EMMA,
+        metric: "weight",
+        value: 7.5,
+        unit: "lb",
+        approximate: false,
+      },
+    },
+    {
+      say: "Liam weighs 4.2 kilograms",
+      expected: {
+        kind: "measurement",
+        baby: LIAM,
+        metric: "weight",
+        value: 4.2,
+        unit: "kg",
+        approximate: false,
+      },
+    },
+    {
+      say: "Liam is 21 inches long",
+      expected: {
+        kind: "measurement",
+        baby: LIAM,
+        metric: "length",
+        value: 21,
+        unit: "in",
+        approximate: false,
+      },
+    },
+    {
+      say: "Liam is one foot nine inches",
+      expected: {
+        kind: "measurement",
+        baby: LIAM,
+        metric: "length",
+        value: 21,
+        unit: "in",
+        approximate: false,
+      },
+    },
+    {
+      say: "Liam's head is about 14 inches", // head beats length; "about" -> approximate
+      expected: {
+        kind: "measurement",
+        baby: LIAM,
+        metric: "head",
+        value: 14,
+        unit: "in",
+        approximate: true,
+      },
+    },
+    {
+      say: "Emma is 9lb", // glued unit
+      expected: {
+        kind: "measurement",
+        baby: EMMA,
+        metric: "weight",
+        value: 9,
+        unit: "lb",
+        approximate: false,
+      },
+    },
+  ])("$say", ({ say, expected }) => {
+    const result = parseCommands(say, BABIES);
+    expect(result.command).toEqual(expected);
+  });
+
+  test("7 pounds and 3 ounces is exact (no rounding)", () => {
+    const result = parseCommands("Emma weighs 7 pounds and 3 ounces", BABIES);
+    expect(result.command).toMatchObject({
+      kind: "measurement",
+      metric: "weight",
+      unit: "lb",
+    });
+    if (result.command.kind === "measurement") {
+      expect(result.command.value).toBeCloseTo(7.1875, 4);
+    }
+  });
+
+  test("no value said -> value is undefined", () => {
+    const result = parseCommands("Log Emma's weight", BABIES);
+    expect(result.command).toEqual({
+      kind: "measurement",
+      baby: EMMA,
+      metric: "weight",
+      approximate: false,
+    });
+  });
 });

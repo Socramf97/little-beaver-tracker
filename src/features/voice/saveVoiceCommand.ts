@@ -1,3 +1,4 @@
+import { formatLength, formatWeight } from "@/utils/units";
 import { createEvent } from "../events/eventServices";
 import { BabyEvent } from "../events/types";
 import { parseCommands } from "./parser/parseCommand";
@@ -72,8 +73,25 @@ export function confirmationText(event: BabyEvent, babyName: string): string {
     return `Logged a ${type} diaper for ${babyName}`;
   }
 
-  return `Logged a measurement for ${babyName}`;
+  if (event.kind === "measurement") {
+    if (event.weightKg !== undefined) {
+      return `Logged a weight of ${formatWeight(event.weightKg)} for ${babyName}`;
+    }
+
+    if (event.lengthCm !== undefined) {
+      return `Logged a length of ${formatLength(event.lengthCm)} for ${babyName}`;
+    }
+    if (event.headCircumferenceCm !== undefined) {
+      return `Logged a head size of ${formatLength(event.headCircumferenceCm)} for ${babyName}`;
+    }
+
+    return `Logged a measurement for ${babyName}`;
+  }
+
+  return `Saved an event for ${babyName}`;
 }
+
+// HELPERS
 
 // "1 ounce", "3 ounces", "120 milliliters"
 
