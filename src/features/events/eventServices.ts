@@ -1,6 +1,7 @@
 // Event Services where screens and voice can save or edit events
-// Event drafts are validaded before being sent to the DB
+// Event drafts are validated before being sent to the DB
 
+import * as Crypto from "expo-crypto";
 import {
     createDiaperEvent,
     updateDiaperEvent,
@@ -9,106 +10,105 @@ import {
     createFeedingEvent,
     updateFeedingEvent,
 } from "../../../services/database/feedings";
-import { EventDraft } from "./types";
+import type { BabyEvent, EventDraft } from "./types";
 import { validateEvent } from "./validation";
 
 // Used to create an ID when creating a new event (ID not created in DB)
 function makeId(): string {
-  const time = Date.now(); // ID created using current date and time
-  const randomInt = Math.floor(Math.random() * 1000); // adds a random int in case of duplicate timestamp
-  return `${time}${randomInt}`;
+  return Crypto.randomUUID();
 }
 
-// Validates draft of a new event and saves it as a new event
+// Validates draft of a new event and saves it as a new event.
+// Throws an EventValidationError if the draft has problems, or an Error if saving fails.
+export async function createEvent(draft: EventDraft): Promise<BabyEvent> {
+  // Stops if the draft has problems, error message gets sent back to the user to fix
+  const event = validateEvent(draft);
 
-export async function createEvent(draft: EventDraft) {
-  const result = validateEvent(draft);
-  if (!result.ok) {
-    return result; // Stops draft if there are errors, errors get sent back to the user to fix
+  // Measurements don't have database functions yet, will be implemented in the future
+  if (event.kind !== "diaper" && event.kind !== "feeding") {
+    throw new Error("This type of event can't be saved yet.");
   }
+
   const id = makeId();
-  const event = result.event;
 
-  if (event.kind === "diaper") {
-    await createDiaperEvent({
-      id,
-      baby_id: event.babyId,
-      diaper_type: event.diaperType,
-      notes: event.notes,
-      timestamp: event.timestamp.toISOString(),
-    });
-    // sends back saved event with created ID
-    return { ok: true, event: { ...event, id } };
+  try {
+    if (event.kind === "diaper") {
+      await createDiaperEvent({
+        id,
+        baby_id: event.babyId,
+        diaper_type: event.diaperType,
+        notes: event.notes,
+        timestamp: event.timestamp.toISOString(),
+      });
+    } else {
+      await createFeedingEvent({
+        id,
+        baby_id: event.babyId,
+        feeding_type: event.feedingType,
+        amount: event.amount,
+        unit: event.unit,
+        is_approximate: event.isApproximate,
+        notes: event.notes,
+        timestamp: event.timestamp.toISOString(),
+      });
+    }
+  } catch (error) {
+    // Logs DB problems
+    console.error("Failed to save event:", error);
+    throw new Error("Something went wrong, entry not saved. Please try again.");
   }
-  if (event.kind === "feeding") {
-    await createFeedingEvent({
-      id,
-      baby_id: event.babyId,
-      feeding_type: event.feedingType,
-      amount: event.amount,
-      unit: event.unit,
-      is_approximate: event.isApproximate,
-      notes: event.notes,
-      timestamp: event.timestamp.toISOString(),
-    });
-    return { ok: true, event: { ...event, id } };
-  }
+
+  // Sends back saved event with created ID
+  return { ...event, id };
 }
 
 // Edits existing event, draft should include original timestamp,
 // otherwise timestamp will be updated to current time.
+// Throws an EventValidationError if the draft has problems or if the DB fails.
+export async function updateEvent(
+  id: string,
+  draft: EventDraft,
+): Promise<BabyEvent> {
+  const event = validateEvent(draft);
 
-export async function updateEvent(id: string, draft: EventDraft) {
-  const result = validateEvent(draft);
-  if (!result.ok) {
-    return result;
+  // Measurements don't have database functions yet
+  if (event.kind !== "diaper" && event.kind !== "feeding") {
+    throw new Error("This type of event can't be edited yet.");
   }
 
-  const event = result.event;
+  // Starts as false, waits for DB response. Checked after try to keep our "not found" error.
+  let updated = false;
 
-  if (event.kind === "diaper") {
-    const updated = await updateDiaperEvent({
-      id,
-      baby_id: event.babyId,
-      diaper_type: event.diaperType,
-      notes: event.notes,
-      timestamp: event.timestamp.toISOString(),
-    });
-    if (!updated) {
-      return {
-        ok: false,
-        errors: [
-          {
-            field: "id",
-            message: "Entry could not be found. It may have been deleted",
-          },
-        ],
-      };
+  try {
+    if (event.kind === "diaper") {
+      updated = await updateDiaperEvent({
+        id,
+        baby_id: event.babyId,
+        diaper_type: event.diaperType,
+        notes: event.notes,
+        timestamp: event.timestamp.toISOString(),
+      });
+    } else {
+      updated = await updateFeedingEvent({
+        id,
+        baby_id: event.babyId,
+        feeding_type: event.feedingType,
+        amount: event.amount,
+        unit: event.unit,
+        is_approximate: event.isApproximate,
+        notes: event.notes,
+        timestamp: event.timestamp.toISOString(),
+      });
     }
-    return { ok: true, event: { ...event, id } };
+  } catch (error) {
+    console.error("Failed to update event:", error);
+    throw new Error("Something went wrong, entry not saved. Please try again.");
   }
-  if (event.kind === "feeding") {
-    const updated = await updateFeedingEvent({
-      id,
-      baby_id: event.babyId,
-      feeding_type: event.feedingType,
-      amount: event.amount,
-      unit: event.unit,
-      is_approximate: event.isApproximate,
-      notes: event.notes,
-      timestamp: event.timestamp.toISOString(),
-    });
-    if (!updated) {
-      return {
-        ok: false,
-        errors: [
-          {
-            field: "id",
-            message: "Entry could not be found. It may have been deleted",
-          },
-        ],
-      };
-    }
-    return { ok: true, event: { ...event, id } };
+
+  // false means no event has this id (for example, it was already deleted)
+  if (!updated) {
+    throw new Error("Entry could not be found. It may have been deleted.");
   }
+
+  return { ...event, id };
 }

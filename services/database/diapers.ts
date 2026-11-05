@@ -59,9 +59,9 @@ export async function updateDiaperEvent(
       event.baby_id,
       event.diaper_type,
       event.notes ?? null,
-      event.timestamp ?? new Date().toISOString(),
+      event.timestamp,
       event.id,
     ],
   );
-  return result.changes > 0; // check changes to see if it worked, if == 0, then no changes were made(possible error)
+  return result.changes > 0; // False means no changes were made(entry might've been deleted)
 }

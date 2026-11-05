@@ -79,5 +79,5 @@ export async function updateFeedingEvent(
       event.id,
     ],
   );
-  return result.changes > 0;
+  return result.changes > 0; // False means no changes were made(entry might've been deleted)
 }
