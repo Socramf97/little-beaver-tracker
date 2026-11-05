@@ -1,6 +1,7 @@
 import { formatLength, formatWeight } from "@/utils/units";
 import { createEvent } from "../events/eventServices";
 import { BabyEvent } from "../events/types";
+import { EventValidationError } from "../events/validation";
 import { parseCommands } from "./parser/parseCommand";
 import { toEventDraft } from "./toEventDraft";
 import { BabyRef } from "./types";
@@ -9,7 +10,8 @@ export type VoiceSaveResult =
   | { status: "saved"; event: BabyEvent; message: string }
   | { status: "needsInfo"; question: string; field: string }
   | { status: "notUnderstood" }
-  | { status: "notSupported"; kind: string };
+  | { status: "notSupported"; kind: string }
+  | { status: "failed"; message: string };
 
 // Take the full parsed command and save it to marco's event service OR require more information
 export async function saveVoiceCommand(
@@ -23,23 +25,36 @@ export async function saveVoiceCommand(
     return { status: "notUnderstood" };
   }
 
-  const result = await createEvent(draft);
-
-  if (!result) {
-    return { status: "notSupported", kind: draft.kind ?? "unknown" };
-  }
-  if ("errors" in result) {
-    const first = result.errors[0];
-    return { status: "needsInfo", question: first.message, field: first.field };
+  // Measurements can't be saved yet, so catch it before calling the service
+  if (draft.kind === "measurement") {
+    return { status: "notSupported", kind: draft.kind };
   }
 
-  const babyName =
-    babies.find((b) => b.id === result.event.babyId)?.name ?? "the baby";
-  return {
-    status: "saved",
-    event: result.event,
-    message: confirmationText(result.event, babyName),
-  };
+  try {
+    const event = await createEvent(draft);
+
+    const babyName =
+      babies.find((b) => b.id === event.babyId)?.name ?? "the baby";
+    return {
+      status: "saved",
+      event,
+      message: confirmationText(event, babyName),
+    };
+  } catch (error) {
+    if (error instanceof EventValidationError) {
+      const first = error.errors[0];
+      return {
+        status: "needsInfo",
+        question: first.message,
+        field: first.field,
+      };
+    }
+    // DB failure or anything else
+    return {
+      status: "failed",
+      message: error instanceof Error ? error.message : "Something went wrong.",
+    };
+  }
 }
 
 // Confirmation Text: What is returned after saving event
@@ -56,8 +71,9 @@ export function confirmationText(event: BabyEvent, babyName: string): string {
       return `Logged a ${type} for ${babyName}`;
     }
 
-    const estimate = event.isApproximate ? "about" : "";
-    const amount = `${estimate} ${event.amount.toFixed(1)} ${unitWord(event.amount, event.unit)}`;
+    const estimate = event.isApproximate ? "about " : "";
+    const rounded = Number(event.amount.toFixed(1));
+    const amount = `${estimate}${rounded} ${unitWord(rounded, event.unit)}`;
     return `Logged ${amount} of ${type} for ${babyName}`;
   }
 

@@ -9,6 +9,8 @@ jest.mock("../../events/eventService", () => ({
 }));
 const mockCreateEvent = createEvent as jest.Mock;
 
+// WILL REPLACE WITH EITAN'S GETBABIES()
+
 const EMMA: BabyRef = { id: "b1", name: "Emma" };
 const LIAM: BabyRef = { id: "b2", name: "Liam" };
 const BABIES = [EMMA, LIAM];
