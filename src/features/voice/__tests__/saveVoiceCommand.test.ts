@@ -1,10 +1,14 @@
-import { createEvent } from "../../events/eventService";
+import { createEvent } from "../../events/eventServices";
+import { EventValidationError } from "../../events/validation";
+import { parseCommands } from "../parser/parseCommand";
 import { confirmationText, saveVoiceCommand } from "../saveVoiceCommand";
+import { toEventDraft } from "../toEventDraft";
 import type { BabyRef } from "../types";
 
 // Replace Marcos's createEvent with a fake we control.
 // The parser and toEventDraft are still real; only saving is faked.
-jest.mock("../../events/eventService", () => ({
+// createEvent now returns the saved event directly, or THROWS on problems.
+jest.mock("../../events/eventServices", () => ({
   createEvent: jest.fn(),
 }));
 const mockCreateEvent = createEvent as jest.Mock;
@@ -19,8 +23,9 @@ const NOW = new Date("2026-11-03T10:00:00Z");
 /** Makes the fake createEvent "save" whatever draft it gets and give it an id. */
 function fakeSaveSucceeds() {
   mockCreateEvent.mockImplementation(async (draft) => ({
-    ok: true,
-    event: { ...draft, id: "e1", timestamp: NOW },
+    ...draft,
+    id: "e1",
+    timestamp: NOW,
   }));
 }
 
@@ -68,54 +73,27 @@ describe("saved", () => {
 
   test("uses 'the baby' if the saved babyId isn't in the list", async () => {
     mockCreateEvent.mockResolvedValue({
-      ok: true,
-      event: {
-        kind: "diaper",
-        diaperType: "pee",
-        babyId: "someone-else",
-        id: "e1",
-        timestamp: NOW,
-      },
+      kind: "diaper",
+      diaperType: "pee",
+      babyId: "someone-else",
+      id: "e1",
+      timestamp: NOW,
     });
     const result = await saveVoiceCommand("Liam had a wet diaper", BABIES);
     expect(result).toMatchObject({
       message: "Logged a wet diaper for the baby",
     });
   });
-
-  test.each([
-    [
-      "Emma weighs nine pounds four ounces",
-      "Logged a weight of 9 pounds 4 ounces for Emma",
-    ],
-    [
-      "Emma weighs 7 pounds and 3 ounces",
-      "Logged a weight of 7 pounds 3 ounces for Emma",
-    ],
-    ["Liam is 21 inches long", "Logged a length of 21 inches for Liam"],
-    ["Liam's head is 14 inches", "Logged a head size of 14 inches for Liam"],
-  ])("measurement: %s", async (say, message) => {
-    const result = await saveVoiceCommand(say, BABIES);
-    expect(result).toMatchObject({ status: "saved", message });
-  });
-
-  test("measurement is saved in metric", async () => {
-    await saveVoiceCommand("Liam is 21 inches long", BABIES);
-    const draft = mockCreateEvent.mock.calls[0][0];
-    expect(draft).toMatchObject({ kind: "measurement", babyId: "b2" });
-    expect(draft.lengthCm).toBeCloseTo(53.34, 2);
-  });
 });
 
 describe("needsInfo", () => {
   test("returns the first validation question", async () => {
-    mockCreateEvent.mockResolvedValue({
-      ok: false,
-      errors: [
+    mockCreateEvent.mockRejectedValue(
+      new EventValidationError([
         { field: "babyId", message: "Which baby is this for?" },
         { field: "feedingType", message: "What kind of feeding was it?" },
-      ],
-    });
+      ]),
+    );
 
     const result = await saveVoiceCommand("had three ounces", BABIES);
     expect(result).toEqual({
@@ -138,21 +116,42 @@ describe("notUnderstood", () => {
 });
 
 describe("notSupported", () => {
-  test("createEvent returns nothing (measurement isn't supported yet)", async () => {
-    mockCreateEvent.mockResolvedValue(undefined);
-    const result = await saveVoiceCommand(
-      "Emma weighs nine pounds four ounces",
-      BABIES,
-    );
+  // Measurements can't be saved yet, so saveVoiceCommand stops before createEvent.
+  test.each([
+    "Emma weighs nine pounds four ounces",
+    "Emma weighs 7 pounds and 3 ounces",
+    "Liam is 21 inches long",
+    "Liam's head is 14 inches",
+  ])("measurement: %s -> notSupported, nothing saved", async (say) => {
+    const result = await saveVoiceCommand(say, BABIES);
     expect(result).toEqual({ status: "notSupported", kind: "measurement" });
+    expect(mockCreateEvent).not.toHaveBeenCalled();
+  });
+
+  // Still check the parser turns inches into metric, ready for when saving is supported.
+  test("measurement draft is in metric", () => {
+    const parsed = parseCommands("liam is 21 inches long", BABIES);
+    const draft = toEventDraft(parsed.command);
+    expect(draft).toMatchObject({ kind: "measurement", babyId: "b2" });
+    expect(draft?.lengthCm).toBeCloseTo(53.34, 2);
   });
 });
 
-test("if saving throws (database error), the error is passed up", async () => {
-  mockCreateEvent.mockRejectedValue(new Error("database is locked"));
-  await expect(
-    saveVoiceCommand("Liam had a wet diaper", BABIES),
-  ).rejects.toThrow("database is locked");
+describe("failed", () => {
+  test("database error returns failed with the error message", async () => {
+    mockCreateEvent.mockRejectedValue(new Error("database is locked"));
+    const result = await saveVoiceCommand("Liam had a wet diaper", BABIES);
+    expect(result).toEqual({ status: "failed", message: "database is locked" });
+  });
+
+  test("non-Error throws get a generic message", async () => {
+    mockCreateEvent.mockRejectedValue("something odd");
+    const result = await saveVoiceCommand("Liam had a wet diaper", BABIES);
+    expect(result).toEqual({
+      status: "failed",
+      message: "Something went wrong.",
+    });
+  });
 });
 
 // ---------- confirmationText ----------
@@ -167,6 +166,8 @@ describe("confirmationText", () => {
       ["formula", 3, "oz", true, "Logged about 3 ounces of formula for Emma"],
       ["formula", 1, "oz", false, "Logged 1 ounce of formula for Emma"], // singular
       ["formula", 2.5, "oz", false, "Logged 2.5 ounces of formula for Emma"], // decimal kept
+      ["formula", 3.3333, "oz", false, "Logged 3.3 ounces of formula for Emma"], // rounded
+      ["formula", 0.98, "oz", false, "Logged 1 ounce of formula for Emma"], // rounds to singular
       [
         "bottle",
         120,
@@ -214,13 +215,6 @@ describe("confirmationText", () => {
       const event = { ...base, kind: "diaper", diaperType } as const;
       expect(confirmationText(event, "Emma")).toBe(expected);
     });
-  });
-
-  test("measurement", () => {
-    const event = { ...base, kind: "measurement", weightKg: 4.2 } as const;
-    expect(confirmationText(event, "Emma")).toBe(
-      "Logged a measurement for Emma",
-    );
   });
 
   test("no double spaces anywhere", () => {

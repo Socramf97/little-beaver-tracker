@@ -68,13 +68,16 @@ export function confirmationText(event: BabyEvent, babyName: string): string {
     const type = event.feedingType;
 
     if (event.amount === undefined) {
-      return `Logged a ${type} for ${babyName}`;
+      return type === "bottle"
+        ? `Logged a bottle for ${babyName}`
+        : `Logged formula for ${babyName}`;
     }
 
     const estimate = event.isApproximate ? "about " : "";
     const rounded = Number(event.amount.toFixed(1));
-    const amount = `${estimate}${rounded} ${unitWord(rounded, event.unit)}`;
-    return `Logged ${amount} of ${type} for ${babyName}`;
+    const source = type === "bottle" ? "from a bottle" : "of formula";
+
+    return `Logged ${estimate}${rounded} ${unitWord(rounded, event.unit)} ${source} for ${babyName}`;
   }
 
   if (event.kind === "diaper") {
