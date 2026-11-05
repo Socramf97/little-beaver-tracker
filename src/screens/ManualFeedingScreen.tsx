@@ -52,12 +52,28 @@ export default function ManualFeedingScreen() {
         <Button
           title="Save Feeding"
           onPress={() => {
+
+            if (!feedingType.trim()) {
+              alert("Please enter a feeding type");
+              return;
+            }
+
+            if (!amount.trim()) {
+              alert("Please enter an amount");
+              return;
+            }
+
+            if (Number(amount) <= 0) {
+              alert("Amount must be greater than 0");
+              return;
+            }
+
             console.log("Feeding Type:", feedingType);
             console.log("Amount:", amount);
             console.log("Unit:", unit);
             console.log("Notes:", notes);
-          }}
-        />
+      }}
+    />
       </View>
     </View>
   );
