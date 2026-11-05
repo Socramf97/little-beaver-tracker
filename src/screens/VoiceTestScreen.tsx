@@ -57,7 +57,7 @@ export default function VoiceTestScreen() {
         </Text>
       </Pressable>
       <Text style={{ fontSize: 18 }}>{transcript || "Say something…"}</Text>
-      {error && <Text style={{ color: "red" }}>{error}</Text>}
+      {error.length > 0 && <Text style={{ color: "red" }}>{error}</Text>}
     </View>
   );
 }
