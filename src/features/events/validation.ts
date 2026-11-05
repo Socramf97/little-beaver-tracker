@@ -1,10 +1,10 @@
 import type {
-    DiaperType,
-    EventDraft,
-    EventKind,
-    FeedingType,
-    NewBabyEvent,
-    VolumeUnit,
+  DiaperType,
+  EventDraft,
+  EventKind,
+  FeedingType,
+  NewBabyEvent,
+  VolumeUnit,
 } from "./types";
 
 // Allowed values so we can check them while the app runs
@@ -18,10 +18,18 @@ export type ValidationError = {
   message: string;
 };
 
-// Validation returns a valid event or a list of problems
-export type ValidationResult =
-  | { ok: true; event: NewBabyEvent }
-  | { ok: false; errors: ValidationError[] };
+// Thrown when a draft has problems. Keeps list of problems so voice/screens
+// can ask the parent to fix each one.
+export class EventValidationError extends Error {
+  errors: ValidationError[];
+
+  constructor(errors: ValidationError[]) {
+    // Combines every problem into one message
+    super(errors.map((error) => error.message).join(" "));
+    this.name = "EventValidationError";
+    this.errors = errors;
+  }
+}
 
 // Checks that a number is above zero
 function isPositive(value: number): boolean {
@@ -178,8 +186,8 @@ function buildEvent(draft: EventDraft): NewBabyEvent {
 }
 
 // Checks a draft from voice or a form.
-// Returns a valid event ready to save, or a list of problems to ask the parent about.
-export function validateEvent(draft: EventDraft): ValidationResult {
+// Returns a valid event ready to save, or throws an EventValidationError
+export function validateEvent(draft: EventDraft): NewBabyEvent {
   const errors: ValidationError[] = [];
 
   checkCommonFields(draft, errors);
@@ -193,8 +201,8 @@ export function validateEvent(draft: EventDraft): ValidationResult {
   }
 
   if (errors.length > 0) {
-    return { ok: false, errors };
+    throw new EventValidationError(errors);
   }
 
-  return { ok: true, event: buildEvent(draft) };
+  return buildEvent(draft);
 }
