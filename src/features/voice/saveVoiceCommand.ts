@@ -1,6 +1,6 @@
 import { formatLength, formatWeight } from "@/utils/units";
 import { createEvent } from "../events/eventServices";
-import { BabyEvent } from "../events/types";
+import { BabyEvent, EventDraft } from "../events/types";
 import { EventValidationError } from "../events/validation";
 import { parseCommands } from "./parser/parseCommand";
 import { toEventDraft } from "./toEventDraft";
@@ -8,7 +8,7 @@ import { BabyRef } from "./types";
 
 export type VoiceSaveResult =
   | { status: "saved"; event: BabyEvent; message: string }
-  | { status: "needsInfo"; question: string; field: string }
+  | { status: "needsInfo"; question: string; field: string; draft: EventDraft }
   | { status: "notUnderstood" }
   | { status: "notSupported"; kind: string }
   | { status: "failed"; message: string };
@@ -47,6 +47,7 @@ export async function saveVoiceCommand(
         status: "needsInfo",
         question: first.message,
         field: first.field,
+        draft,
       };
     }
     // DB failure or anything else

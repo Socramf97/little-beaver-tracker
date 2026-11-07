@@ -100,6 +100,10 @@ describe("needsInfo", () => {
       status: "needsInfo",
       field: "babyId",
       question: "Which baby is this for?",
+      draft: expect.objectContaining({
+        kind: "feeding",
+        amount: 3,
+      }),
     });
   });
 });
