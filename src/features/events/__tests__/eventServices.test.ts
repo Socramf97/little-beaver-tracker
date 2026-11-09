@@ -1,12 +1,14 @@
 import {
     createDiaperEvent,
+    deleteDiaperEvent,
     updateDiaperEvent,
 } from "../../../../services/database/diapers";
 import {
     createFeedingEvent,
+    deleteFeedingEvent,
     updateFeedingEvent,
 } from "../../../../services/database/feedings";
-import { createEvent, updateEvent } from "../eventServices";
+import { createEvent, deleteEvent, updateEvent } from "../eventServices";
 import type { EventDraft } from "../types";
 import { EventValidationError } from "../validation";
 
@@ -15,10 +17,12 @@ import { EventValidationError } from "../validation";
 jest.mock("../../../../services/database/diapers", () => ({
   createDiaperEvent: jest.fn(),
   updateDiaperEvent: jest.fn(),
+  deleteDiaperEvent: jest.fn(),
 }));
 jest.mock("../../../../services/database/feedings", () => ({
   createFeedingEvent: jest.fn(),
   updateFeedingEvent: jest.fn(),
+  deleteFeedingEvent: jest.fn(),
 }));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "new-id" }));
 
@@ -26,6 +30,8 @@ const mockCreateDiaper = createDiaperEvent as jest.Mock;
 const mockUpdateDiaper = updateDiaperEvent as jest.Mock;
 const mockCreateFeeding = createFeedingEvent as jest.Mock;
 const mockUpdateFeeding = updateFeedingEvent as jest.Mock;
+const mockDeleteDiaper = deleteDiaperEvent as jest.Mock;
+const mockDeleteFeeding = deleteFeedingEvent as jest.Mock;
 
 const NOW = new Date("2026-11-03T10:00:00Z");
 
@@ -62,6 +68,8 @@ beforeEach(() => {
   mockUpdateDiaper.mockReset();
   mockCreateFeeding.mockReset();
   mockUpdateFeeding.mockReset();
+  mockDeleteDiaper.mockReset();
+  mockDeleteFeeding.mockReset();
 });
 
 // ---------- createEvent tests ----------
@@ -195,6 +203,61 @@ describe("updateEvent: failed", () => {
     mockUpdateDiaper.mockRejectedValue(new Error("disk full"));
 
     await expect(updateEvent("e1", DIAPER)).rejects.toThrow(
+      "Something went wrong",
+    );
+
+    hideLog.mockRestore();
+  });
+});
+
+// ---------- deleteEvent tests ----------
+
+describe("deleteEvent: deleted", () => {
+  test("deletes a diaper from the diaper table", async () => {
+    mockDeleteDiaper.mockResolvedValue(true);
+
+    await deleteEvent("diaper", "e1");
+
+    expect(mockDeleteDiaper).toHaveBeenCalledWith("e1");
+    expect(mockDeleteFeeding).not.toHaveBeenCalled();
+  });
+
+  test("deletes a feeding from the feeding table", async () => {
+    mockDeleteFeeding.mockResolvedValue(true);
+
+    await deleteEvent("feeding", "e2");
+
+    expect(mockDeleteFeeding).toHaveBeenCalledWith("e2");
+    expect(mockDeleteDiaper).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteEvent: not found", () => {
+  test("no event with that id -> throws", async () => {
+    mockDeleteDiaper.mockResolvedValue(false);
+
+    await expect(deleteEvent("diaper", "missing")).rejects.toThrow(
+      "could not be found",
+    );
+  });
+});
+
+describe("deleteEvent: notSupported", () => {
+  test("measurements throw, nothing deleted", async () => {
+    await expect(deleteEvent("measurement", "e1")).rejects.toThrow(
+      "can't be deleted yet",
+    );
+    expect(mockDeleteDiaper).not.toHaveBeenCalled();
+    expect(mockDeleteFeeding).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteEvent: failed", () => {
+  test("database error -> friendly message", async () => {
+    const hideLog = jest.spyOn(console, "error").mockImplementation(() => {});
+    mockDeleteFeeding.mockRejectedValue(new Error("database is locked"));
+
+    await expect(deleteEvent("feeding", "e2")).rejects.toThrow(
       "Something went wrong",
     );
 
