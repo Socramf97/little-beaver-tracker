@@ -8,6 +8,11 @@ import {
     deleteFeedingEvent,
     updateFeedingEvent,
 } from "../../../../services/database/feedings";
+import {
+    createMeasurement,
+    deleteMeasurement,
+    updateMeasurement,
+} from "../../../../services/database/measurements";
 import { createEvent, deleteEvent, updateEvent } from "../eventServices";
 import type { EventDraft } from "../types";
 import { EventValidationError } from "../validation";
@@ -24,6 +29,11 @@ jest.mock("../../../../services/database/feedings", () => ({
   updateFeedingEvent: jest.fn(),
   deleteFeedingEvent: jest.fn(),
 }));
+jest.mock("../../../../services/database/measurements", () => ({
+  createMeasurement: jest.fn(),
+  updateMeasurement: jest.fn(),
+  deleteMeasurement: jest.fn(),
+}));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "new-id" }));
 
 const mockCreateDiaper = createDiaperEvent as jest.Mock;
@@ -32,6 +42,9 @@ const mockCreateFeeding = createFeedingEvent as jest.Mock;
 const mockUpdateFeeding = updateFeedingEvent as jest.Mock;
 const mockDeleteDiaper = deleteDiaperEvent as jest.Mock;
 const mockDeleteFeeding = deleteFeedingEvent as jest.Mock;
+const mockCreateMeasurement = createMeasurement as jest.Mock;
+const mockUpdateMeasurement = updateMeasurement as jest.Mock;
+const mockDeleteMeasurement = deleteMeasurement as jest.Mock;
 
 const NOW = new Date("2026-11-03T10:00:00Z");
 
@@ -49,6 +62,14 @@ const FEEDING: EventDraft = {
   amount: 3,
   unit: "oz",
   isApproximate: true,
+  timestamp: NOW,
+};
+
+const MEASUREMENT: EventDraft = {
+  kind: "measurement",
+  babyId: "b1",
+  weightKg: 4.2,
+  lengthCm: 53,
   timestamp: NOW,
 };
 
@@ -70,6 +91,9 @@ beforeEach(() => {
   mockUpdateFeeding.mockReset();
   mockDeleteDiaper.mockReset();
   mockDeleteFeeding.mockReset();
+  mockCreateMeasurement.mockReset();
+  mockUpdateMeasurement.mockReset();
+  mockDeleteMeasurement.mockReset();
 });
 
 // ---------- createEvent tests ----------
@@ -128,11 +152,18 @@ describe("createEvent: invalid draft", () => {
   );
 });
 
-describe("createEvent: notSupported", () => {
-  test("measurements throw, nothing saved", async () => {
-    await expect(
-      createEvent({ kind: "measurement", babyId: "b1", weightKg: 4 }),
-    ).rejects.toThrow("can't be saved yet");
+describe("createEvent: measurements", () => {
+  test("converts a measurement draft to the database's names", async () => {
+    await createEvent(MEASUREMENT);
+
+    expect(mockCreateMeasurement).toHaveBeenCalledWith({
+      id: "new-id",
+      baby_id: "b1",
+      weight_kg: 4.2,
+      length_cm: 53,
+      head_circumference_cm: undefined,
+      timestamp: "2026-11-03T10:00:00.000Z",
+    });
     expect(mockCreateDiaper).not.toHaveBeenCalled();
     expect(mockCreateFeeding).not.toHaveBeenCalled();
   });
@@ -171,6 +202,19 @@ describe("updateEvent: updated", () => {
     expect(mockUpdateFeeding).toHaveBeenCalledWith(
       expect.objectContaining({ id: "e2", feeding_type: "formula", amount: 3 }),
     );
+  });
+});
+
+describe("updateEvent: measurements", () => {
+  test("updates a measurement using the id passed in", async () => {
+    mockUpdateMeasurement.mockResolvedValue(true);
+
+    const updated = await updateEvent("e3", MEASUREMENT);
+
+    expect(mockUpdateMeasurement).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "e3", weight_kg: 4.2, length_cm: 53 }),
+    );
+    expect(updated.id).toBe("e3");
   });
 });
 
@@ -242,11 +286,13 @@ describe("deleteEvent: not found", () => {
   });
 });
 
-describe("deleteEvent: notSupported", () => {
-  test("measurements throw, nothing deleted", async () => {
-    await expect(deleteEvent("measurement", "e1")).rejects.toThrow(
-      "can't be deleted yet",
-    );
+describe("deleteEvent: measurements", () => {
+  test("deletes a measurement from the measurements table", async () => {
+    mockDeleteMeasurement.mockResolvedValue(true);
+
+    await deleteEvent("measurement", "e3");
+
+    expect(mockDeleteMeasurement).toHaveBeenCalledWith("e3");
     expect(mockDeleteDiaper).not.toHaveBeenCalled();
     expect(mockDeleteFeeding).not.toHaveBeenCalled();
   });
