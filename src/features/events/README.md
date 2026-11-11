@@ -1,6 +1,6 @@
 # Event Service
 
-The event service is how screens and voice save and edit feeding and diaper events. Every draft is validated before it reaches the database, so screens and voice should call these functions instead of calling the database functions directly.
+The event service is how screens and voice save, edit, and delete feeding, diaper, and measurement events. Every draft is validated before it reaches the database, so screens and voice should call these functions instead of calling the database functions directly.
 
 ## Functions
 
@@ -19,22 +19,29 @@ Validates the new values and updates an existing event.
 - Throws `EventValidationError` if something is missing or wrong, or an `Error` if saving fails or no event has that `id`
 - Include the event's original `timestamp` in the draft. If it's missing, validation fills in "now" and the event's time changes.
 
+### `deleteEvent(kind, id)`
+
+Deletes an existing event. It needs the `kind` because feedings, diapers, and measurements are saved in different tables.
+
+- Returns nothing once the event is deleted
+- Throws an `Error` if deleting fails or no event has that `id`
+
 ## What goes in a draft (`EventDraft`)
 
-- Every draft needs a `kind` ("feeding" or "diaper") and a `babyId`. `timestamp` and `notes` are optional, and the timestamp defaults to now.
+- Every draft needs a `kind` ("feeding", "diaper", or "measurement") and a `babyId`. `timestamp` and `notes` are optional, and the timestamp defaults to now.
 - Feedings need a `feedingType` ("breast", "bottle", or "formula"). If you add an `amount` it needs a `unit` too ("oz" or "mL"). Diapers need a `diaperType` ("pee", "poop", or "both").
+- Measurements need at least one of `weightKg`, `lengthCm`, or `headCircumferenceCm`, and every value has to be more than 0. Weights are in kilograms and lengths in centimeters.
 - Values are case-sensitive: `"Formula"` or `"ml"` will be rejected.
 
 ## Errors you might see
 
 - Missing or wrong info throws an `EventValidationError` (check `error.errors`).
-- Measurements throw "can't be saved yet," database problems throw "Something went wrong...", and updating an `id` that doesn't exist throws "Entry could not be found."
+- Database problems throw "Something went wrong...", and updating or deleting an `id` that doesn't exist throws "Entry could not be found."
 
 ## Good to know
 
 - You don't need to pass an `id` to `createEvent`. The service creates one for you.
 - An event's type also can't change when editing. To turn a diaper into a feeding, you'd delete it and create a new one.
-- Measurements and deleting events aren't supported yet.
 
 ## Examples
 
@@ -48,7 +55,7 @@ async function exampleSave() {
       kind: "feeding",
       babyId: selectedBaby.id,
       feedingType: "formula",
-      amount: Number(amountText), // text inputs give a string, so convert it
+      amount: amountText ? Number(amountText) : undefined, // leave it out if the box is empty
       unit: "oz",
     });
     // success: show "Feeding saved!"
@@ -73,6 +80,12 @@ await updateEvent(event.id, {
   diaperType: "poop", // the changed value
   timestamp: event.timestamp, // keep the original time!
 });
+```
+
+### Deleting an event
+
+```ts
+await deleteEvent(event.kind, event.id);
 ```
 
 ### Voice

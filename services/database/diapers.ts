@@ -65,3 +65,14 @@ export async function updateDiaperEvent(
   );
   return result.changes > 0; // False means no changes were made(entry might've been deleted)
 }
+
+export async function deleteDiaperEvent(id: string): Promise<boolean> {
+  const db = await getDatabase();
+
+  const result = await db.runAsync(
+    `DELETE FROM diaper_events
+     WHERE id = ?`,
+    [id],
+  );
+  return result.changes > 0; // False means nothing was deleted (no diaper with that id)
+}
