@@ -22,8 +22,8 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Baby Profiles
+      <Text style={styles.sectionHeader}>
+         Baby Profiles
       </Text>
 
       <Text style={styles.note}>
@@ -34,17 +34,9 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
         Baby ID: {activeBaby ? activeBaby.id : "None"}
       </Text>
 
-<Text style={styles.note}>
-  --------------------
-</Text>
-
-<Text style={styles.note}>
-  Baby Profiles
-</Text>
-
 {babies.map((baby) => (
-  <View key={baby.id}>
-    <Text style={styles.note}>
+  <View key={baby.id} style={styles.babyCard}>
+    <Text style={styles.sectionHeader}>
       {baby.name}
     </Text>
 
@@ -54,47 +46,47 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
     />
 
     <Button
-      title="Delete"
+      title="Edit"
       onPress={() => {
+        const newName = prompt("Enter a new baby name:");
+
+        if (!newName || !newName.trim()) return;
+
         setBabies(
-          babies.filter(
-            (currentBaby) => currentBaby.id !== baby.id
+          babies.map((currentBaby) =>
+            currentBaby.id === baby.id
+              ? {
+                  ...currentBaby,
+                  name: newName,
+                }
+              : currentBaby
           )
         );
       }}
-    />
+/>
     <Button
-  title="Edit"
-  onPress={() => {
-    const updatedBabies = babies.map(
-  (currentBaby) =>
-    currentBaby.id === baby.id
-      ? {
-          ...currentBaby,
-          name: currentBaby.name + " (Edited)",
-        }
-      : currentBaby
-);
+      title="Edit"
+      onPress={() => {
+        const newName = prompt("Enter a new baby name:");
 
-    setBabies(updatedBabies);
-  }}
+        console.log(newName);
+   }}
 />
 
   </View>
 ))}
 
-<Text style={styles.note}>
-  --------------------
-</Text>
-
-<Text style={styles.note}>
+<Text style={styles.sectionHeader}>
   Add New Baby
 </Text>
+
 <TextInput
+  style={styles.input}
   placeholder="Enter baby name"
   value={babyName}
   onChangeText={setBabyName}
 />
+
 <Button
   title="Create Baby"
   onPress={() => {
@@ -135,5 +127,37 @@ const styles = StyleSheet.create({
   note: {
     fontSize: 16,
     color: "#555",
+    marginVertical: 4,
   },
+
+  babyCard: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    padding: 15,
+    marginVertical: 10,
+    backgroundColor: "#fff",
+    width: "90%",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 10,
+    width: "90%",
+    backgroundColor: "#fff",
+    marginVertical: 10,
+  },
+
+  sectionHeader: {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginBottom: 10,
+},
+
 });
