@@ -34,6 +34,10 @@ export default function HomeScreen() {
       <Link href="/manual-diaper" style={{ fontSize: 18, padding: 12 }}>
         Manual Diaper Entry
       </Link>
+
+      <Link href="/history" style={{ fontSize: 18, padding: 12 }}>
+        View History
+      </Link>
     </View>
   );
 }
