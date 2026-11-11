@@ -46,35 +46,31 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
     />
 
     <Button
-      title="Delete"
+      title="Edit"
       onPress={() => {
-        if (
-          confirm("Are you sure you want to delete this baby profile?")
-      ) {
+        const newName = prompt("Enter a new baby name:");
+
+        if (!newName || !newName.trim()) return;
+
         setBabies(
-          babies.filter(
-            (currentBaby) =>
-              currentBaby.id !== baby.id
+          babies.map((currentBaby) =>
+            currentBaby.id === baby.id
+              ? {
+                  ...currentBaby,
+                  name: newName,
+                }
+              : currentBaby
           )
         );
-      }
-    }}
-    />
+      }}
+/>
     <Button
       title="Edit"
       onPress={() => {
-        const updatedBabies = babies.map(
-      (currentBaby) =>
-      currentBaby.id === baby.id
-        ? {
-            ...currentBaby,
-            name: currentBaby.name + " (Edited)",
-          }
-      : currentBaby
-    );
+        const newName = prompt("Enter a new baby name:");
 
-    setBabies(updatedBabies);
-  }}
+        console.log(newName);
+   }}
 />
 
   </View>
