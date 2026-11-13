@@ -39,4 +39,24 @@ export const CREATE_TABLES_SQL = `
     timestamp TEXT NOT NULL,
     FOREIGN KEY (baby_id) REFERENCES babies(id)
   );
+
+  
+  CREATE TABLE IF NOT EXISTS photo_attachments (
+    id TEXT PRIMARY KEY NOT NULL,
+    baby_id TEXT NOT NULL,
+    event_id TEXT,
+    event_type TEXT,
+    file_uri TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (baby_id) REFERENCES babies(id),
+    CHECK (
+      (event_id IS NULL AND event_type IS NULL)
+      OR
+      (event_id IS NOT NULL AND
+       event_type IN ('feeding', 'diaper', 'measurement'))
+    )
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_photo_attachments_baby
+    ON photo_attachments(baby_id);
 `;
