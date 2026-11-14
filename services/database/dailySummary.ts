@@ -42,21 +42,22 @@ export async function getDailySummary(
     throw new Error("Date must be YYYY-MM-DD.");
   }
 
-  const start = new Date(`${date}T00:00:00.000Z`);
+  const [year, month, day] = date.split("-").map(Number);
+  const start = new Date(year, month - 1, day);
 
   // Reject impossible dates such as February 30.
   if (
     !Number.isFinite(start.getTime()) ||
-    start.toISOString().slice(0, 10) !== date
+    start.getFullYear() !== year ||
+    start.getMonth() !== month - 1 ||
+    start.getDate() !== day
   ) {
     throw new Error("Date must be a valid calendar date.");
   }
 
   // Use an exclusive end date so fractional seconds
   // are handled correctly.
-  const end = new Date(
-    start.getTime() + 24 * 60 * 60 * 1000
-  );
+  const end = new Date(year, month - 1, day + 1);
 
   const startIso = start.toISOString();
   const endIso = end.toISOString();
