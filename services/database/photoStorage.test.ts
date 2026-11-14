@@ -12,7 +12,6 @@ import {
 import {
   createPhotoAttachment,
   deletePhotoAttachment,
-  getPhotoById,
   getPhotosByBaby,
   getPhotosByEvent
 } from "./photos";
@@ -30,14 +29,12 @@ jest.mock("expo-file-system", () => ({
 jest.mock("./photos", () => ({
   createPhotoAttachment: jest.fn(),
   deletePhotoAttachment: jest.fn(),
-  getPhotoById: jest.fn(),
   getPhotosByBaby: jest.fn(),
   getPhotosByEvent: jest.fn(),
 }));
 
 const mockCreate = createPhotoAttachment as jest.Mock;
 const mockDelete = deletePhotoAttachment as jest.Mock;
-const mockGetPhoto = getPhotoById as jest.Mock;
 const mockGetBaby = getPhotosByBaby as jest.Mock;
 const mockGetEvent = getPhotosByEvent as jest.Mock;
 
@@ -99,13 +96,15 @@ describe("Photo file storage", () => {
         baby_id: "baby-123",
         event_id: null,
         event_type: null,
-        file_uri:
-        "file:///documents/baby-photos/123e4567-e89b-42d3-a456-426614174000.png",
+        file_uri: "123e4567-e89b-42d3-a456-426614174000.png",
     }),
     );
 
     expect(result.id).toBe(
     "123e4567-e89b-42d3-a456-426614174000",
+    );
+    expect(result.file_uri).toBe(
+      "file:///documents/baby-photos/123e4567-e89b-42d3-a456-426614174000.png",
     );
   });
 
@@ -153,78 +152,123 @@ describe("Photo file storage", () => {
     expect(mockCopy).not.toHaveBeenCalled();
   });
 
-  test("lists photos for a baby", async () => {
-    const photos = [{ id: "photo-123" }];
+  test("lists photos for a baby with full file URIs", async () => {
+    const photos = [
+      {
+        id: "photo-123",
+        file_uri: "photo-123.jpg",
+      },
+    ];
+  
     mockGetBaby.mockResolvedValue(photos);
-
+  
     const result = await listBabyPhotos("baby-123");
-
-    expect(result).toEqual(photos);
+  
     expect(mockGetBaby).toHaveBeenCalledWith("baby-123");
-  });
+  
+    expect(result).toEqual([
+      {
+        id: "photo-123",
+        file_uri: "file:///documents/baby-photos/photo-123.jpg",
+      },
+  ]);
+});
 
-  test("lists photos for an event", async () => {
-    mockGetEvent.mockResolvedValue([]);
 
-    await listEventPhotos("feeding-1", "feeding");
-
+  test("lists event photos with full file URIs", async () => {
+    mockGetEvent.mockResolvedValue([
+      {
+        id: "photo-456",
+        file_uri: "photo-456.jpg",
+      },
+    ]);
+  
+    const result = await listEventPhotos(
+      "feeding-1",
+      "feeding",
+    );
+  
     expect(mockGetEvent).toHaveBeenCalledWith(
       "feeding-1",
       "feeding",
     );
+  
+    expect(result).toEqual([
+      {
+        id: "photo-456",
+        file_uri: "file:///documents/baby-photos/photo-456.jpg",
+      },
+    ]);
   });
 
 
-  test("deletes both photo file and database record", async () => {
-    mockGetPhoto.mockResolvedValue({
-      id: "photo-123",
-      baby_id: "baby-123",
-      file_uri: "file:///documents/baby-photos/photo-123.jpg",
-    });
 
-    mockDelete.mockResolvedValue(
-      "file:///documents/baby-photos/photo-123.jpg",
-    );
 
+  test("deletes database record before photo file", async () => {
+    mockDelete.mockResolvedValue("photo-123.jpg");
+  
     const result = await removePhoto("photo-123");
-
+  
     expect(result).toBe(true);
-    expect(mockGetPhoto).toHaveBeenCalledWith("photo-123");
-    expect(mockFileDelete).toHaveBeenCalledTimes(1);
     expect(mockDelete).toHaveBeenCalledWith("photo-123");
-
+    expect(mockFileDelete).toHaveBeenCalledTimes(1);
+  
     expect(
-      mockFileDelete.mock.invocationCallOrder[0],
-    ).toBeLessThan(
       mockDelete.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      mockFileDelete.mock.invocationCallOrder[0],
     );
   });
-
+  
   test("returns false when photo does not exist", async () => {
-    mockGetPhoto.mockResolvedValue(null);
-
+    mockDelete.mockResolvedValue(null);
+  
     const result = await removePhoto("missing");
-
+  
     expect(result).toBe(false);
+    expect(mockDelete).toHaveBeenCalledWith("missing");
     expect(mockFileDelete).not.toHaveBeenCalled();
-    expect(mockDelete).not.toHaveBeenCalled();
   });
-
-  test("preserves database record if file deletion fails", async () => {
-    mockGetPhoto.mockResolvedValue({
-      id: "photo-123",
-      baby_id: "baby-123",
-      file_uri: "file:///documents/baby-photos/photo-123.jpg",
-    });
-
+  
+  test("preserves photo file if database deletion fails", async () => {
+    mockDelete.mockRejectedValueOnce(
+      new Error("Database deletion failed"),
+    );
+  
+    const errorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+  
+    try {
+      await expect(
+        removePhoto("photo-123"),
+      ).rejects.toThrow("Database deletion failed");
+  
+      expect(mockFileDelete).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+  
+  test("handles file deletion failure after database deletion", async () => {
+    mockDelete.mockResolvedValue("photo-123.jpg");
+  
     mockFileDelete.mockImplementationOnce(() => {
       throw new Error("File deletion failed");
     });
-
-    await expect(
-      removePhoto("photo-123"),
-    ).rejects.toThrow("File deletion failed");
-
-    expect(mockDelete).not.toHaveBeenCalled();
+  
+    const warnSpy = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => {});
+  
+    try {
+      const result = await removePhoto("photo-123");
+  
+      expect(result).toBe(true);
+      expect(mockDelete).toHaveBeenCalledWith("photo-123");
+      expect(mockFileDelete).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
-});
