@@ -272,3 +272,4 @@ describe("Photo file storage", () => {
       warnSpy.mockRestore();
     }
   });
+});
