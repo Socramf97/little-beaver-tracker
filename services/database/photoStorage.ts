@@ -5,7 +5,6 @@ import { Directory, File, Paths } from "expo-file-system";
 import {
   createPhotoAttachment,
   deletePhotoAttachment,
-  getPhotoById,
   getPhotosByBaby,
   getPhotosByEvent,
   type PhotoAttachment,
@@ -13,6 +12,14 @@ import {
 } from "./photos";
 
 const PHOTO_DIRECTORY = "baby-photos";
+
+// Build the current device's full URI from a stored filename.
+function resolvePhotoUri(filename: string): string {
+  return new File(
+    new Directory(Paths.document, PHOTO_DIRECTORY),
+    filename,
+  ).uri;
+}
 
 export interface SavePhotoInput {
   babyId: string;
@@ -52,10 +59,8 @@ export async function savePhoto(
     ? extensionMatch[1].toLowerCase()
     : "jpg";
 
-  const destination = new File(
-    directory,
-    `${photoId}.${extension}`,
-  );
+  const filename = `${photoId}.${extension}`;
+  const destination = new File(directory, filename);
 
   const source = new File(input.sourceUri);
 
@@ -66,7 +71,7 @@ export async function savePhoto(
     await createPhotoAttachment({
       id: photoId,
       baby_id: input.babyId,
-      file_uri: destination.uri,
+      file_uri: filename,
       event_id: input.eventId ?? null,
       event_type: input.eventType ?? null,
       created_at: createdAt,
@@ -95,7 +100,12 @@ export async function savePhoto(
 export async function listBabyPhotos(
   babyId: string,
 ): Promise<PhotoAttachment[]> {
-  return getPhotosByBaby(babyId);
+  const photos = await getPhotosByBaby(babyId);
+
+  return photos.map((photo) => ({
+    ...photo,
+    file_uri: resolvePhotoUri(photo.file_uri),
+  }));
 }
 
 /**
@@ -105,7 +115,12 @@ export async function listEventPhotos(
   eventId: string,
   eventType: PhotoEventType,
 ): Promise<PhotoAttachment[]> {
-  return getPhotosByEvent(eventId, eventType);
+  const photos = await getPhotosByEvent(eventId, eventType);
+
+  return photos.map((photo) => ({
+    ...photo,
+    file_uri: resolvePhotoUri(photo.file_uri),
+  }));
 }
 
 /**
@@ -113,20 +128,34 @@ export async function listEventPhotos(
  */
 
 export async function removePhoto(photoId: string): Promise<boolean> {
-  const photo = await getPhotoById(photoId);
+  let filename: string | null;
 
-  if (!photo) {
+  // Delete the database record first.
+  try {
+    filename = await deletePhotoAttachment(photoId);
+  } catch (error) {
+    console.error("Failed to delete photo record:", error);
+    throw error;
+  }
+
+  if (filename === null) {
     return false;
   }
 
-  const file = new File(photo.file_uri);
+  // Then clean up the physical file.
+  try {
+    const file = new File(
+      new Directory(Paths.document, PHOTO_DIRECTORY),
+      filename,
+    );
 
-  // Delete the physical file before removing its database record.
-  if (file.exists) {
-    file.delete();
+    if (file.exists) {
+      file.delete();
+    }
+  } catch (error) {
+    // The database record is already gone, so there's no broken reference.
+    console.warn("Photo record deleted, but file cleanup failed:", error);
   }
 
-  const deletedUri = await deletePhotoAttachment(photoId);
-  return deletedUri !== null;
+  return true;
 }
-
