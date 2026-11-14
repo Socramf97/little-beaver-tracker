@@ -69,11 +69,11 @@ describe("getDailySummary", () => {
 
     expect(mockGetAllAsync).toHaveBeenCalledTimes(2);
 
-    const expectedParams = [
-      "baby-123",
-      "2026-11-13T00:00:00.000Z",
-      "2026-11-14T00:00:00.000Z",
-    ];
+  const expectedParams = [
+    "baby-123",
+    new Date(2026, 10, 13).toISOString(),
+    new Date(2026, 10, 14).toISOString(),
+  ];
 
     expect(mockGetAllAsync.mock.calls[0][1])
       .toEqual(expectedParams);
@@ -127,8 +127,12 @@ describe("getDailySummary", () => {
 
     const params = mockGetAllAsync.mock.calls[0][1];
 
-    expect(params[1]).toBe("2028-02-29T00:00:00.000Z");
-    expect(params[2]).toBe("2028-03-01T00:00:00.000Z");
+  expect(params[1]).toBe(
+    new Date(2028, 1, 29).toISOString()
+  );
+  expect(params[2]).toBe(
+    new Date(2028, 2, 1).toISOString()
+  );
   });
 
   test("propagates database errors", async () => {
