@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { validateEvent } from "../features/events/validation";
+import { createEvent } from "../features/events/eventServices";
 
 import {
   Button,
@@ -52,13 +52,15 @@ export default function ManualFeedingScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Save Feeding"
-          onPress={() => {
+          onPress={async () => {
   try {
-    validateEvent({
+    await createEvent({
       kind: "feeding",
       babyId: "test-baby",
       feedingType,
-      amount: Number(amount),
+      amount: amount.trim()
+        ? Number(amount)
+        : undefined,
       unit,
       notes,
       timestamp: new Date(),

@@ -1,4 +1,4 @@
-import { validateEvent } from "@/features/events/validation";
+import { createEvent } from "@/features/events/eventServices";
 import { useState } from "react";
 
 import {
@@ -36,9 +36,9 @@ export default function ManualDiaperScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Save Diaper Event"
-          onPress={() => {
+          onPress={async () => {
             try {
-              validateEvent({
+              await createEvent({
                 kind: "diaper",
                 babyId: "test-baby",
                 diaperType,
@@ -46,7 +46,7 @@ export default function ManualDiaperScreen() {
                 timestamp: new Date(),
               });
 
-              alert("Diaper event validated successfully!");
+              alert("Diaper event saved successfully!");
 
               console.log("Diaper Type:", diaperType);
               console.log("Notes:", notes);

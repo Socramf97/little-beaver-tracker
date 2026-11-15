@@ -48,9 +48,7 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
     <Button
       title="Edit"
       onPress={() => {
-        const newName = prompt("Enter a new baby name:");
-
-        if (!newName || !newName.trim()) return;
+        const newName = "Edited Baby";
 
         setBabies(
           babies.map((currentBaby) =>
@@ -63,15 +61,25 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
           )
         );
       }}
-/>
-    <Button
-      title="Edit"
-      onPress={() => {
-        const newName = prompt("Enter a new baby name:");
+    />
 
-        console.log(newName);
-   }}
-/>
+    <Button
+      title="Delete"
+      onPress={() => {
+        setBabies(
+          babies.filter(
+            (currentBaby) => currentBaby.id !== baby.id
+          )
+        );
+
+        if (
+          activeBaby &&
+          activeBaby.id === baby.id
+        ) {
+          setActiveBaby(null);
+        }
+      }}
+    />
 
   </View>
 ))}
