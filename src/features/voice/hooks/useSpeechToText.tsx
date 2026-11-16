@@ -13,6 +13,8 @@ import {
   QuestionState,
   trackQuestion,
 } from "./questionTracker";
+
+import { BabyRef } from "../types";
 import { IDLE_MS, PAUSE_MS, useSilenceTimer } from "./useSilenceTimer";
 
 export type Phase =
@@ -28,7 +30,7 @@ export type Message = {
   text: string;
 };
 
-export function useSpeechToText() {
+export function useSpeechToText(babies: BabyRef[]) {
   // --- STATES --- -> For the screen
   const [phase, setPhase] = useState<Phase>("starting");
   const [result, setResult] = useState<
@@ -36,25 +38,25 @@ export function useSpeechToText() {
   >(null);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState("");
-  // const [messages, setMessages] = useState<Message[]>([]);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: "1", from: "user", text: "had three ounces" },
-    { id: "2", from: "app", text: "Which baby is this for?" },
-    { id: "3", from: "user", text: "Emma" },
-    { id: "4", from: "app", text: "Logged 3 ounces of formula for Emma" },
-    { id: "5", from: "user", text: "had three ounces" },
-    { id: "6", from: "app", text: "Which baby is this for?" },
-    { id: "9", from: "user", text: "Emma" },
-    { id: "7", from: "app", text: "Logged 3 ounces of formula for Emma" },
-    { id: "10", from: "user", text: "had three ounces" },
-    { id: "12", from: "app", text: "Which baby is this for?" },
-    { id: "13", from: "user", text: "Emma" },
-    { id: "14", from: "app", text: "Logged 3 ounces of formula for Emma" },
-    { id: "51", from: "user", text: "had three ounces" },
-    { id: "16", from: "app", text: "Which baby is this for?" },
-    { id: "19", from: "user", text: "Emma" },
-    { id: "17", from: "app", text: "Logged 3 ounces of formula for Emma" },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  // const [messages, setMessages] = useState<Message[]>([
+  //   { id: "1", from: "user", text: "had three ounces" },
+  //   { id: "2", from: "app", text: "Which baby is this for?" },
+  //   { id: "3", from: "user", text: "Emma" },
+  //   { id: "4", from: "app", text: "Logged 3 ounces of formula for Emma" },
+  //   { id: "5", from: "user", text: "had three ounces" },
+  //   { id: "6", from: "app", text: "Which baby is this for?" },
+  //   { id: "9", from: "user", text: "Emma" },
+  //   { id: "7", from: "app", text: "Logged 3 ounces of formula for Emma" },
+  //   { id: "10", from: "user", text: "had three ounces" },
+  //   { id: "12", from: "app", text: "Which baby is this for?" },
+  //   { id: "13", from: "user", text: "Emma" },
+  //   { id: "14", from: "app", text: "Logged 3 ounces of formula for Emma" },
+  //   { id: "51", from: "user", text: "had three ounces" },
+  //   { id: "16", from: "app", text: "Which baby is this for?" },
+  //   { id: "19", from: "user", text: "Emma" },
+  //   { id: "17", from: "app", text: "Logged 3 ounces of formula for Emma" },
+  // ]);
 
   const isListening = phase === "listening";
 
@@ -77,6 +79,7 @@ export function useSpeechToText() {
   // When we want to restart EX: Finishing a command
   function resetCommand() {
     fullCommand.current = "";
+    setMessages([]);
     listenAfterSpeaking.current = false;
     questions.current = EMPTY_QUESTIONS;
   }
@@ -178,7 +181,7 @@ export function useSpeechToText() {
 
     fullCommand.current = (fullCommand.current + " " + text).trim();
 
-    const res = await handleCommand(fullCommand.current);
+    const res = await handleCommand(fullCommand.current, babies);
     setResult(res.result.status);
     let reply = res.text;
 

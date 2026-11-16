@@ -1,14 +1,11 @@
 import { saveVoiceCommand, VoiceSaveResult } from "../saveVoiceCommand";
 import { BabyRef } from "../types";
 
-const EMMA: BabyRef = { id: "b1", name: "Emma" };
-const LIAM: BabyRef = { id: "b2", name: "Liam" };
-const BABIES = [EMMA, LIAM];
-
 export async function handleCommand(
   text: string,
+  babies: BabyRef[],
 ): Promise<{ result: VoiceSaveResult; text: string }> {
-  const result = await saveVoiceCommand(text, BABIES); // ← the real work
+  const result = await saveVoiceCommand(text, babies);
   switch (result.status) {
     case "saved":
       return { result, text: result.message };

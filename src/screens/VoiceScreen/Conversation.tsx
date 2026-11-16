@@ -27,6 +27,7 @@ export function Conversation({
       {messages.map((m) => (
         <Bubble key={m.id} message={m} />
       ))}
+
       {/* What they're saying right now: dashed until it's final */}
       {transcript !== "" && <LiveBubble text={transcript} />}
       {phase === "thinking" && (

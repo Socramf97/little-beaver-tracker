@@ -8,11 +8,13 @@ import Footer from "./Footer";
 import { Header } from "./Header";
 import { styles } from "./Styles";
 
+import { useBabies } from "@/hooks/useBabies";
 import Toast from "react-native-toast-message";
 
 export default function VoiceTestScreen() {
   const router = useRouter();
   const closed = useRef(false);
+  const { babies, loading } = useBabies();
 
   const {
     transcript,
@@ -23,16 +25,17 @@ export default function VoiceTestScreen() {
     startNewCommand,
     messages,
     result,
-  } = useSpeechToText();
+  } = useSpeechToText(babies);
 
   useEffect(() => {
+    if (loading) return;
     let cancelled = false;
     startNewCommand(() => !cancelled);
     return () => {
       cancelled = true;
       abortListening();
     };
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     if (phase !== "stopped" || result !== "saved" || closed.current) {
@@ -57,6 +60,15 @@ export default function VoiceTestScreen() {
   }
 
   const isEmpty = messages.length === 0 && transcript === "";
+
+  if (!loading && babies.length === 0) {
+    return (
+      <View style={styles.sheet}>
+        <Header onClose={onClose} />
+        <Text style={styles.title}>Add a baby first</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.sheet}>
