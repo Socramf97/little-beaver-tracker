@@ -1,3 +1,4 @@
+import { createEvent } from "@/features/events/eventServices";
 import { useState } from "react";
 
 import {
@@ -20,7 +21,7 @@ export default function ManualDiaperScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Diaper Type (Wet, Dirty, Mixed)"
+        placeholder="Diaper Type (pee, poop, both)"
         value={diaperType}
         onChangeText={setDiaperType}
       />
@@ -35,16 +36,29 @@ export default function ManualDiaperScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Save Diaper Event"
-          onPress={() => {
+          onPress={async () => {
+            try {
+              await createEvent({
+                kind: "diaper",
+                babyId: "test-baby",
+                diaperType,
+                notes,
+                timestamp: new Date(),
+              });
 
-            if (!diaperType.trim()) {
-              alert("Please enter a diaper type");
-              return;
+              alert("Diaper event saved successfully!");
+
+              console.log("Diaper Type:", diaperType);
+              console.log("Notes:", notes);
+
+          } catch (error) {
+            if (error instanceof Error) {
+              alert(error.message);
+            } else {
+              alert("Validation failed.");
             }
-
-            console.log("Diaper Type:", diaperType);
-            console.log("Notes:", notes);
-          }}
+          }
+        }}
         />
       </View>
     </View>
