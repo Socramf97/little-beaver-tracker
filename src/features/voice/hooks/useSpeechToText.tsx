@@ -63,7 +63,7 @@ export function useSpeechToText() {
   const nextMsgId = useRef(0);
   const fullCommand = useRef(""); // holds the FULL command if needed more info
   // const appResponse = useRef<string | null>(null); // HOLD the response after mic is off to send
-  // const micOn = useRef(false); // ONLY speak after the mic is OFF or might hear itself
+  const micOn = useRef(false); // ONLY speak after the mic is OFF or might hear itself
   const listenAfterSpeaking = useRef(false); // IF we need to ask another question
   const questions = useRef<QuestionState>(EMPTY_QUESTIONS); // tracking how many times we ask the same question
   // --- HELPERS ---
@@ -130,6 +130,7 @@ export function useSpeechToText() {
     ExpoSpeechRecognitionModule.abort();
     Speech.stop();
     setPhase("stopped");
+    micOn.current = false;
     resetCommand();
   };
 
@@ -139,12 +140,16 @@ export function useSpeechToText() {
   // START EVENT
   useSpeechRecognitionEvent("start", () => {
     setPhase("listening");
+    micOn.current = true;
+    console.log("MIC ON");
     Speech.stop();
     silence.stopAfter(IDLE_MS);
   });
 
   // END EVENT
   useSpeechRecognitionEvent("end", () => {
+    micOn.current = false;
+    console.log("MIC OFF");
     silence.clear();
     setPhase((p) => (p === "listening" ? "stopped" : p));
   });
