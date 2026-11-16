@@ -10,29 +10,32 @@ export default function HomeScreen() {
       {/* App title displayed at the top of the home screen */}
       <Text style={styles.title}>Little Beaver Tracker</Text>
 
-      {/* Temporary placeholder text to mark this as the initial UI/UX work */}
-      <Text style={styles.subtitle}>Home Dashboard (UI/UX – Natasha)</Text>
-
       {/* Space reserved for future features like quick actions or baby summaries */}
       <Text style={styles.note}>
-        More features will be added here as the project develops.
+        <Text style={styles.subtitle}>
+        Track feedings, diaper changes, and baby care history.
+        </Text>
       </Text>
 
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
-      <Link href="/voice-test" style={{ fontSize: 18, padding: 12 }}>
-        Voice test (dev button - temporary will delete )
+      <Link href="/voice-test" style={styles.linkButton}>
+        Voice Assistant
       </Link>
 
-      <Link href="/baby-profiles" style={{ fontSize: 18, padding: 12 }}>
+      <Link href="/baby-profiles" style={styles.linkButton}>
         Baby Profiles
       </Link>
       
-      <Link href="/manual-feeding" style={{ fontSize: 18, padding: 12 }}>
+      <Link href="/manual-feeding" style={styles.linkButton}>
         Manual Feeding Entry
       </Link>
 
-      <Link href="/manual-diaper" style={{ fontSize: 18, padding: 12 }}>
+      <Link href="/manual-diaper" style={styles.linkButton}>
         Manual Diaper Entry
+      </Link>
+
+      <Link href="/history" style={styles.linkButton}>
+        View History
       </Link>
     </View>
   );
@@ -45,20 +48,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#F8F6F1",
     padding: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
+    color: "#6B4423",
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 18,
+    color: "#4F4F4F",
     marginBottom: 20,
   },
   note: {
     fontSize: 14,
-    color: "#555",
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
   },
+
+  linkButton: {
+    fontSize: 18,
+    padding: 12,
+    backgroundColor: "#A3C586",
+    borderRadius: 10,
+    marginVertical: 5,
+    width: 250,
+    textAlign: "center",
+    color: "#000",
+  },
+
 });

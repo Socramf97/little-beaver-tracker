@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createEvent } from "../features/events/eventServices";
 
 import {
   Button,
@@ -51,29 +52,36 @@ export default function ManualFeedingScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Save Feeding"
-          onPress={() => {
+          onPress={async () => {
+  try {
+    await createEvent({
+      kind: "feeding",
+      babyId: "test-baby",
+      feedingType,
+      amount: amount.trim()
+        ? Number(amount)
+        : undefined,
+      unit,
+      notes,
+      timestamp: new Date(),
+    });
 
-            if (!feedingType.trim()) {
-              alert("Please enter a feeding type");
-              return;
-            }
+    alert("Feeding validated successfully!");
 
-            if (!amount.trim()) {
-              alert("Please enter an amount");
-              return;
-            }
+    console.log("Feeding Type:", feedingType);
+    console.log("Amount:", amount);
+    console.log("Unit:", unit);
+    console.log("Notes:", notes);
 
-            if (Number(amount) <= 0) {
-              alert("Amount must be greater than 0");
-              return;
-            }
-
-            console.log("Feeding Type:", feedingType);
-            console.log("Amount:", amount);
-            console.log("Unit:", unit);
-            console.log("Notes:", notes);
-      }}
-    />
+  } catch (error) {
+    if (error instanceof Error) {
+      alert(error.message);
+    } else {
+      alert("Validation failed.");
+    }
+  }
+}}
+        />
       </View>
     </View>
   );
