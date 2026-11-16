@@ -20,13 +20,13 @@ export default function HomeScreen() {
 
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={{ fontSize: 18, padding: 12 }}>
-        Voice test (dev button - temporary will delete )
+        Voice
       </Link>
 
       <Link href="/baby-profiles" style={{ fontSize: 18, padding: 12 }}>
         Baby Profiles
       </Link>
-      
+
       <Link href="/manual-feeding" style={{ fontSize: 18, padding: 12 }}>
         Manual Feeding Entry
       </Link>

@@ -39,25 +39,6 @@ export function useSpeechToText(babies: BabyRef[]) {
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  // const [messages, setMessages] = useState<Message[]>([
-  //   { id: "1", from: "user", text: "had three ounces" },
-  //   { id: "2", from: "app", text: "Which baby is this for?" },
-  //   { id: "3", from: "user", text: "Emma" },
-  //   { id: "4", from: "app", text: "Logged 3 ounces of formula for Emma" },
-  //   { id: "5", from: "user", text: "had three ounces" },
-  //   { id: "6", from: "app", text: "Which baby is this for?" },
-  //   { id: "9", from: "user", text: "Emma" },
-  //   { id: "7", from: "app", text: "Logged 3 ounces of formula for Emma" },
-  //   { id: "10", from: "user", text: "had three ounces" },
-  //   { id: "12", from: "app", text: "Which baby is this for?" },
-  //   { id: "13", from: "user", text: "Emma" },
-  //   { id: "14", from: "app", text: "Logged 3 ounces of formula for Emma" },
-  //   { id: "51", from: "user", text: "had three ounces" },
-  //   { id: "16", from: "app", text: "Which baby is this for?" },
-  //   { id: "19", from: "user", text: "Emma" },
-  //   { id: "17", from: "app", text: "Logged 3 ounces of formula for Emma" },
-  // ]);
-
   const isListening = phase === "listening";
 
   // --- Refs --- -> What the handlers check ALWAYS CURRENT NO RE-RENDERS WHEN UPDATED

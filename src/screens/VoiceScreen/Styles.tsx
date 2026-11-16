@@ -77,14 +77,14 @@ export const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     paddingHorizontal: 18,
-    borderRadius: 999, // fully rounded pill
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: "#2a6",
     backgroundColor: "#fff",
     marginBottom: 12,
   },
   manualButtonPressed: {
-    backgroundColor: "#e8f5ee", // light tint while pressed
+    backgroundColor: "#e8f5ee",
   },
   manualButtonText: {
     fontSize: 16,

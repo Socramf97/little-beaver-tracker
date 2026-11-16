@@ -64,7 +64,7 @@ export default function VoiceTestScreen() {
   if (!loading && babies.length === 0) {
     return (
       <View style={styles.sheet}>
-        <Header onClose={onClose} />
+        {/* <Header onClose={onClose} /> */}
         <Text style={styles.title}>Add a baby first</Text>
       </View>
     );
@@ -72,7 +72,7 @@ export default function VoiceTestScreen() {
 
   return (
     <View style={styles.sheet}>
-      <Header onClose={onClose} />
+      {/* <Header onClose={onClose} /> */}
 
       {isEmpty ? (
         <EmptyState
