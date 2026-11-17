@@ -47,12 +47,14 @@ useEffect(() => {
       </Text>
 
       <Text style={styles.filter}>
-        All Events
+        {activeBaby
+          ? `${activeBaby.name}'s Events`
+          : "No Baby Selected"}
       </Text>
 
     <View style={styles.historyCard}>
       {events.map((event) => (
-        <View key={event.id}>
+        <View key={event.id} style={styles.eventCard}>
           <Text style={styles.message}>
             {event.event_type === "feeding"
               ? `${event.feeding_type} Feeding`
@@ -64,6 +66,11 @@ useEffect(() => {
               ? `${event.amount ?? ""} ${event.unit ?? ""}`
               : event.notes ?? ""}
           </Text>
+
+          <Text style={styles.message}>
+            {new Date(event.timestamp).toLocaleString()}
+          </Text>
+
         </View>
       ))}
 
@@ -119,6 +126,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
     marginBottom: 10,
+  },
+
+  eventCard: {
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
 
 });
