@@ -1,9 +1,10 @@
 import { createEvent } from "@/features/events/eventServices";
+import { Picker } from '@react-native-picker/picker';
 import { useState } from "react";
+import { sharedStyles } from "../styles/sharedStyles";
 
 import {
   Button,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -14,26 +15,29 @@ export default function ManualDiaperScreen() {
   const [notes, setNotes] = useState("");
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
+    <View style={sharedStyles.container}>
+      <Text style={sharedStyles.title}>
         Manual Diaper Entry
       </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Diaper Type (pee, poop, both)"
-        value={diaperType}
-        onChangeText={setDiaperType}
-      />
+     <Picker
+        selectedValue={diaperType}
+        onValueChange={(itemValue) => setDiaperType(itemValue)}
+      >
+        <Picker.Item label="Select Diaper Type" value="" />
+        <Picker.Item label="Pee" value="pee" />
+        <Picker.Item label="Poop" value="poop" />
+        <Picker.Item label="Both" value="both" />
+      </Picker>
 
       <TextInput
-        style={styles.input}
+        style={sharedStyles.input}
         placeholder="Notes"
         value={notes}
         onChangeText={setNotes}
       />
 
-      <View style={styles.buttonContainer}>
+      <View style={sharedStyles.buttonContainer}>
         <Button
           title="Save Diaper Event"
           onPress={async () => {
@@ -64,28 +68,3 @@ export default function ManualDiaperScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-
-  buttonContainer: {
-    marginTop: 10,
-  },
-});

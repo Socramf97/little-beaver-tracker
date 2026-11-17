@@ -1,9 +1,11 @@
+import { Picker } from '@react-native-picker/picker';
 import { useState } from "react";
 import { createEvent } from "../features/events/eventServices";
+import { sharedStyles } from "../styles/sharedStyles";
+
 
 import {
   Button,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -16,44 +18,53 @@ export default function ManualFeedingScreen() {
   const [notes, setNotes] = useState("");
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
+    <View style={sharedStyles.container}>
+      <Text style={sharedStyles.title}>
         Manual Feeding Entry
       </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Feeding Type"
-        value={feedingType}
-        onChangeText={setFeedingType}
-      />
+      <Picker
+        selectedValue={feedingType}
+        onValueChange={(itemValue) => setFeedingType(itemValue)}
+      >
+        <Picker.Item label="Select Feeding Type" value="" />
+        <Picker.Item label="Breast" value="breast" />
+        <Picker.Item label="Bottle" value="bottle" />
+        <Picker.Item label="Formula" value="formula" />
+      </Picker>
 
       <TextInput
-        style={styles.input}
+        style={sharedStyles.input}
         placeholder="Amount"
         value={amount}
         onChangeText={setAmount}
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Unit (oz, ml, etc)"
-        value={unit}
-        onChangeText={setUnit}
-      />
+      <Picker
+        selectedValue={unit}
+        onValueChange={(itemValue) => setUnit(itemValue)}
+      >
+        <Picker.Item label="Select Unit" value="" />
+        <Picker.Item label="oz" value="oz" />
+        <Picker.Item label="mL" value="mL" />
+      </Picker>
 
       <TextInput
-        style={styles.input}
+        style={sharedStyles.input}
         placeholder="Notes"
         value={notes}
         onChangeText={setNotes}
       />
 
-      <View style={styles.buttonContainer}>
+      <View style={sharedStyles.buttonContainer}>
         <Button
           title="Save Feeding"
           onPress={async () => {
   try {
+    console.log("feedingType =", feedingType);
+    console.log("amount =", amount);
+    console.log("unit =", unit);
+    console.log("notes =", notes);
     await createEvent({
       kind: "feeding",
       babyId: "test-baby",
@@ -86,28 +97,3 @@ export default function ManualFeedingScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-
-  buttonContainer: {
-    marginTop: 10,
-  },
-});
