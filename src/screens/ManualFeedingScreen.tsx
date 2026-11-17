@@ -1,8 +1,9 @@
 import { Picker } from '@react-native-picker/picker';
 import { useState } from "react";
 import { createEvent } from "../features/events/eventServices";
+import { EventValidationError } from "../features/events/validation";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 import { sharedStyles } from "../styles/sharedStyles";
-
 
 import {
   Button,
@@ -16,6 +17,10 @@ export default function ManualFeedingScreen() {
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Get the currently selected baby so new feeding
+  // entries are automatically linked to the correct profile.
+  const { activeBaby } = useActiveBaby();
 
   return (
     <View style={sharedStyles.container}>
@@ -61,13 +66,13 @@ export default function ManualFeedingScreen() {
           title="Save Feeding"
           onPress={async () => {
   try {
-    console.log("feedingType =", feedingType);
-    console.log("amount =", amount);
-    console.log("unit =", unit);
-    console.log("notes =", notes);
+    if (!activeBaby) {
+      alert("Please select a baby profile first.");
+      return;
+  }
     await createEvent({
       kind: "feeding",
-      babyId: "test-baby",
+      babyId: activeBaby?.id,
       feedingType,
       amount: amount.trim()
         ? Number(amount)
@@ -78,18 +83,14 @@ export default function ManualFeedingScreen() {
     });
 
     alert("Feeding validated successfully!");
-
-    console.log("Feeding Type:", feedingType);
-    console.log("Amount:", amount);
-    console.log("Unit:", unit);
-    console.log("Notes:", notes);
-
   } catch (error) {
-    if (error instanceof Error) {
-      alert(error.message);
-    } else {
-      alert("Validation failed.");
-    }
+      if (error instanceof EventValidationError) {
+        alert(error.errors[0].message);
+      } else if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert("Validation failed.");
+      }
   }
 }}
         />

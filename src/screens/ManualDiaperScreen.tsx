@@ -1,6 +1,8 @@
 import { createEvent } from "@/features/events/eventServices";
 import { Picker } from '@react-native-picker/picker';
 import { useState } from "react";
+import { EventValidationError } from "../features/events/validation";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 import { sharedStyles } from "../styles/sharedStyles";
 
 import {
@@ -13,6 +15,10 @@ import {
 export default function ManualDiaperScreen() {
   const [diaperType, setDiaperType] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Use the currently selected baby so diaper entries
+  // are saved to the correct profile throughout the app.
+  const { activeBaby } = useActiveBaby();
 
   return (
     <View style={sharedStyles.container}>
@@ -42,24 +48,28 @@ export default function ManualDiaperScreen() {
           title="Save Diaper Event"
           onPress={async () => {
             try {
+              // A diaper event should always belong to a baby profile.
+              // Prevent saving until a baby has been selected.
+              if (!activeBaby) {
+                alert("Please select a baby profile first.");
+                return;
+              }
               await createEvent({
                 kind: "diaper",
-                babyId: "test-baby",
+                babyId: activeBaby.id,
                 diaperType,
                 notes,
                 timestamp: new Date(),
               });
 
               alert("Diaper event saved successfully!");
-
-              console.log("Diaper Type:", diaperType);
-              console.log("Notes:", notes);
-
           } catch (error) {
-            if (error instanceof Error) {
-              alert(error.message);
+            if (error instanceof EventValidationError) {
+              alert(error.errors[0].message);
+            } else if (error instanceof Error) {
+                alert(error.message);
             } else {
-              alert("Validation failed.");
+                alert("Validation failed.");
             }
           }
         }}

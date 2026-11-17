@@ -115,6 +115,7 @@ export async function updateEvent(
       });
     }
   } catch (error) {
+     // Logs DB problems
     console.error("Failed to update event:", error);
     throw new Error("Something went wrong, entry not saved. Please try again.");
   }

@@ -1,6 +1,6 @@
 // Baby profile management screen
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   StyleSheet,
@@ -8,17 +8,31 @@ import {
   TextInput,
   View
 } from "react-native";
+import {
+  Baby,
+  createBaby,
+  getAllBabies,
+} from "../../services/database/babies";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
 
 const [babyName, setBabyName] = useState("");
 
-const [babies, setBabies] = useState([
-  { id: "1", name: "Kelly" },
-  { id: "2", name: "Blake" },
-]);
+const [babies, setBabies] = useState<Baby[]>([]);
 
-const [activeBaby, setActiveBaby] = useState<any>(null);
+// Access the currently selected baby so other screens can
+// use the same selection throughout the app.
+const { activeBaby, setActiveBaby } = useActiveBaby();
+
+async function loadBabies() {
+  const allBabies = await getAllBabies();
+  setBabies(allBabies);
+}
+
+useEffect(() => {
+  loadBabies();
+}, []);
 
   return (
     <View style={styles.container}>
@@ -97,21 +111,19 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
 
 <Button
   title="Create Baby"
-  onPress={() => {
+  onPress={async () => {
     if (!babyName.trim()) return;
 
-    setBabies([
-  ...babies,
-  {
-    id: Date.now().toString(),
-    name: babyName,
-  },
-]);
+    const newBaby = {
+      id: Date.now().toString(),
+      name: babyName,
+    };
 
+    await createBaby(newBaby);
+
+    await loadBabies();
 
     setBabyName("");
-
-    console.log(babyName);
   }}
 />
     </View>

@@ -1,6 +1,45 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import {
+  getEventHistory,
+  HistoryEvent,
+} from "../../services/database/history";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function HistoryScreen() {
+  const { activeBaby } = useActiveBaby();
+
+  console.log("Active Baby:", activeBaby);
+
+  // Stores the events returned from the history service.
+  const [events, setEvents] = useState<HistoryEvent[]>([]); 
+  
+  // Reload history whenever a different baby is selected.
+useEffect(() => {
+  async function loadHistory() {
+    if (!activeBaby) {
+      setEvents([]);
+      return;
+    }
+
+    try {
+      const history = await getEventHistory({
+        babyId: activeBaby.id,
+      });
+
+      // Temporary log so we can verify history is being returned
+      // before building the visual display.
+      console.log("History Events:", history);
+
+      setEvents(history);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  }
+
+  loadHistory();
+}, [activeBaby]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
@@ -12,13 +51,22 @@ export default function HistoryScreen() {
       </Text>
 
     <View style={styles.historyCard}>
-      <Text style={styles.message}>
-        No history found yet.
-      </Text>
+      {events.map((event) => (
+        <View key={event.id}>
+          <Text style={styles.message}>
+            {event.event_type === "feeding"
+              ? `${event.feeding_type} Feeding`
+              : `${event.diaper_type} Diaper`}
+          </Text>
 
-      <Text style={styles.description}>
-        Feeding and diaper history will appear here once events are recorded.
-      </Text>
+          <Text style={styles.message}>
+            {event.event_type === "feeding"
+              ? `${event.amount ?? ""} ${event.unit ?? ""}`
+              : event.notes ?? ""}
+          </Text>
+        </View>
+      ))}
+
 </View>
     </View>
   );
@@ -59,12 +107,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-},
+  },
 
-description: {
-  color: "#666",
-  textAlign: "center",
-  marginTop: 10,
-},
+  description: {
+    color: "#666",
+    textAlign: "center",
+    marginTop: 10,
+  },
+
+  note: {
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 10,
+  },
 
 });
