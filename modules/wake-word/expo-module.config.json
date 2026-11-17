@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["WakeWordModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.wakeword.WakeWordModule"]
+  }
+}

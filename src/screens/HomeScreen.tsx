@@ -3,6 +3,7 @@
 
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import BridgeTest from "./BridgeTest";
 
 export default function HomeScreen() {
   return (
@@ -13,10 +14,10 @@ export default function HomeScreen() {
       {/* Space reserved for future features like quick actions or baby summaries */}
       <Text style={styles.note}>
         <Text style={styles.subtitle}>
-        Track feedings, diaper changes, and baby care history.
+          Track feedings, diaper changes, and baby care history.
         </Text>
       </Text>
-
+      <BridgeTest />
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={styles.linkButton}>
         Voice Assistant
@@ -25,7 +26,7 @@ export default function HomeScreen() {
       <Link href="/baby-profiles" style={styles.linkButton}>
         Baby Profiles
       </Link>
-      
+
       <Link href="/manual-feeding" style={styles.linkButton}>
         Manual Feeding Entry
       </Link>
@@ -79,5 +80,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#000",
   },
-
 });
