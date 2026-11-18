@@ -3,7 +3,7 @@
 
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import BridgeTest from "./WakeWordScreen";
+import WakeWordScreen from "./WakeWordScreen";
 
 export default function HomeScreen() {
   return (
@@ -17,7 +17,7 @@ export default function HomeScreen() {
           Track feedings, diaper changes, and baby care history.
         </Text>
       </Text>
-      <BridgeTest />
+      <WakeWordScreen />
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={styles.linkButton}>
         Voice Assistant
