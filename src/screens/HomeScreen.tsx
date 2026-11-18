@@ -17,7 +17,6 @@ export default function HomeScreen() {
           Track feedings, diaper changes, and baby care history.
         </Text>
       </Text>
-      <WakeWordScreen />
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={styles.linkButton}>
         Voice Assistant
@@ -38,6 +37,8 @@ export default function HomeScreen() {
       <Link href="/history" style={styles.linkButton}>
         View History
       </Link>
+
+      <WakeWordScreen />
     </View>
   );
 }

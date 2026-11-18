@@ -32,14 +32,14 @@ public class WakeWordModule: Module {
     // Load our model and start listening
     AsyncFunction("startListening"){ () async throws in
       if self.listener != nil { return }
-      let modelName = "hey_livekit"
+      let modelName = "hey_beaver"
       guard let url = Bundle.main.url(forResource: modelName, withExtension: "onnx") ?? Bundle(for: WakeWordModule.self).url(forResource: modelName, withExtension: "onnx") else {
         throw ModelNotFoundException(modelName)
       }
 
       let model = try self.model ?? WakeWordModel(models: [url], sampleRate: 16_000)
       self.model = model
-      let threshold: Float = 0.5
+      let threshold: Float = 0.7
       let listener = WakeWordListener(model:model, threshold: threshold, debounce: 2.0)
       self.listener = listener
       do {
