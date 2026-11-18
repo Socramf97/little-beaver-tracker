@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import WakeWord from "./src/WakeWordModule";
 
 export type WakeWordStatus =
@@ -8,7 +8,8 @@ export type WakeWordStatus =
   | "listening"
   | "stopping"
   | "denied"
-  | "error";
+  | "error"
+  | "unsupported";
 
 type Detection = { name: string; confidence: number };
 
@@ -17,14 +18,21 @@ type Options = {
   onDetect: (detection: Detection) => void;
   enabled?: boolean;
 };
+
+const IS_SUPPORTED = Platform.OS === "ios";
+
 export function useWakeWord({ onDetect, enabled = true }: Options) {
-  const [status, setStatus] = useState<WakeWordStatus>("idle");
+  const [status, setStatus] = useState<WakeWordStatus>(
+    IS_SUPPORTED ? "idle" : "unsupported",
+  );
+
   const [error, setError] = useState<string | null>(null);
 
   const onDetectRef = useRef(onDetect);
 
   // 1. Subscribe to detection events once.
   useEffect(() => {
+    if (!IS_SUPPORTED) return;
     const sub = WakeWord.addListener("onWakeWord", (e) =>
       onDetectRef.current(e),
     );
@@ -34,6 +42,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
 
   // 2. start
   const start = useCallback(async () => {
+    if (!IS_SUPPORTED) return;
     const granted = await WakeWord.requestMicPermission();
     setError(null);
     if (!granted) {
@@ -52,6 +61,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
 
   // 3. stop
   const stop = useCallback(async () => {
+    if (!IS_SUPPORTED) return;
     setStatus("stopping");
     await WakeWord.stopListening();
     setStatus("idle");
@@ -61,7 +71,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
   // Stop if we put the app in background
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !IS_SUPPORTED) return;
 
     // start() syncs with an external system (the native mic); its setState calls
     // happen after awaiting native responses, not synchronously.

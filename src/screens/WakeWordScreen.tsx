@@ -9,6 +9,7 @@ const STATUS_LABEL: Record<WakeWordStatus, string> = {
   stopping: "Stopping…",
   denied: "Microphone access denied",
   error: "Something went wrong",
+  unsupported: "Not supported on this device",
 };
 
 const STATUS_COLOR: Record<WakeWordStatus, string> = {
@@ -18,6 +19,7 @@ const STATUS_COLOR: Record<WakeWordStatus, string> = {
   stopping: "#E0A800",
   denied: "#D14520",
   error: "#D14520",
+  unsupported: "#D14520",
 };
 
 export default function WakeWordScreen() {
