@@ -11,7 +11,9 @@ import {
 import {
   Baby,
   createBaby,
+  deleteBaby,
   getAllBabies,
+  updateBaby,
 } from "../../services/database/babies";
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
@@ -27,8 +29,18 @@ const { activeBaby, setActiveBaby } = useActiveBaby();
 
 useEffect(() => {
   async function initializeBabies() {
-    const allBabies = await getAllBabies();
-    setBabies(allBabies);
+    try {
+      const allBabies = await getAllBabies();
+
+      console.log("Babies loaded:", allBabies);
+
+      setBabies(allBabies);
+    } catch (error) {
+      console.error(
+        "Failed loading babies:",
+        error
+      );
+    }
   }
 
   initializeBabies();
@@ -61,30 +73,30 @@ useEffect(() => {
 
     <Button
       title="Edit"
-      onPress={() => {
+      onPress={async () => {
         const newName = "Edited Baby";
 
-        setBabies(
-          babies.map((currentBaby) =>
-            currentBaby.id === baby.id
-              ? {
-                  ...currentBaby,
-                  name: newName,
-                }
-              : currentBaby
-          )
+        await updateBaby(
+          baby.id,
+          newName
         );
+
+        const allBabies =
+          await getAllBabies();
+
+        setBabies(allBabies);
       }}
     />
 
     <Button
       title="Delete"
-      onPress={() => {
-        setBabies(
-          babies.filter(
-            (currentBaby) => currentBaby.id !== baby.id
-          )
-        );
+      onPress={async () => {
+        await deleteBaby(baby.id);
+
+        const allBabies =
+          await getAllBabies();
+
+        setBabies(allBabies);
 
         if (
           activeBaby &&
