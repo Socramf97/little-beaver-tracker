@@ -3,7 +3,7 @@
 
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import BridgeTest from "./BridgeTest";
+import BridgeTest from "./WakeWordScreen";
 
 export default function HomeScreen() {
   return (
