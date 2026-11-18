@@ -25,13 +25,13 @@ const [babies, setBabies] = useState<Baby[]>([]);
 // use the same selection throughout the app.
 const { activeBaby, setActiveBaby } = useActiveBaby();
 
-async function loadBabies() {
-  const allBabies = await getAllBabies();
-  setBabies(allBabies);
-}
-
 useEffect(() => {
-  loadBabies();
+  async function initializeBabies() {
+    const allBabies = await getAllBabies();
+    setBabies(allBabies);
+  }
+
+  initializeBabies();
 }, []);
 
   return (
@@ -121,7 +121,8 @@ useEffect(() => {
 
     await createBaby(newBaby);
 
-    await loadBabies();
+    const allBabies = await getAllBabies();
+    setBabies(allBabies);
 
     setBabyName("");
   }}
