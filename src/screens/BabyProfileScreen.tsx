@@ -111,6 +111,15 @@ useEffect(() => {
     <Text style={styles.note}>
       Head Circumference: {latestMeasurements[baby.id].head_circumference_cm ?? "--"} cm
     </Text>
+
+    <Text style={styles.note}>
+      Recorded:
+      {" "}
+      {new Date(
+        latestMeasurements[baby.id].timestamp
+      ).toLocaleDateString()}
+    </Text>
+
   </>
 )}
 
@@ -183,7 +192,9 @@ useEffect(() => {
       onPress={() => setActiveBaby(baby)}
     />
 
-    {editingBabyId !== baby.id && (
+    {editingBabyId !== baby.id &&
+    deleteConfirmationId !== baby.id && (
+
     <Button
       title="Edit"
       onPress={() => {
@@ -208,6 +219,20 @@ useEffect(() => {
           await getAllBabies();
 
         setBabies(allBabies);
+
+        const measurementsMap: Record<string, any> = {};
+
+        for (const baby of allBabies) {
+          const measurements =
+            await getMeasurementsByBaby(baby.id);
+
+          if (measurements.length > 0) {
+            measurementsMap[baby.id] =
+              measurements[0];
+          }
+        }
+
+        setLatestMeasurements(measurementsMap);
 
         if (
           activeBaby &&
