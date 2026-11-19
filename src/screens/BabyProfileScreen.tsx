@@ -21,6 +21,13 @@ export default function BabyProfilesScreen() {
 
 const [babyName, setBabyName] = useState("");
 
+const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
+
+const [editedName, setEditedName] = useState("");
+
+const [deleteConfirmationId, setDeleteConfirmationId] =
+  useState<string | null>(null);
+
 const [babies, setBabies] = useState<Baby[]>([]);
 
 // Access the currently selected baby so other screens can
@@ -66,30 +73,69 @@ useEffect(() => {
       {baby.name}
     </Text>
 
-    <Button
-      title="Select"
-      onPress={() => setActiveBaby(baby)}
+{editingBabyId === baby.id && (
+  <>
+    <TextInput
+      style={styles.input}
+      value={editedName}
+      onChangeText={setEditedName}
+      placeholder="Enter new baby name"
     />
 
     <Button
-      title="Edit"
+      title="Save"
       onPress={async () => {
-        const newName = "Edited Baby";
+        if (!editedName.trim()) return;
 
         await updateBaby(
           baby.id,
-          newName
+          editedName
         );
 
         const allBabies =
           await getAllBabies();
 
         setBabies(allBabies);
+
+        setEditingBabyId(null);
+        setEditedName("");
       }}
     />
 
     <Button
-      title="Delete"
+      title="Cancel"
+      onPress={() => {
+        setEditingBabyId(null);
+        setEditedName("");
+      }}
+    />
+    
+  </>
+)}
+
+    <Button
+      title="Select"
+      onPress={() => setActiveBaby(baby)}
+    />
+
+    {editingBabyId !== baby.id && (
+    <Button
+      title="Edit"
+      onPress={() => {
+        setEditingBabyId(baby.id);
+        setEditedName(baby.name);
+      }}
+    />
+  )}
+
+    {deleteConfirmationId === baby.id && (
+  <>
+    <Text style={styles.note}>
+      Are you sure you want to delete {baby.name}?
+    </Text>
+
+    <Button
+      title="Yes Delete"
       onPress={async () => {
         await deleteBaby(baby.id);
 
@@ -104,8 +150,28 @@ useEffect(() => {
         ) {
           setActiveBaby(null);
         }
+
+        setDeleteConfirmationId(null);
       }}
     />
+
+    <Button
+      title="Cancel"
+      onPress={() => {
+        setDeleteConfirmationId(null);
+      }}
+    />
+  </>
+)}
+
+    {deleteConfirmationId !== baby.id && (
+    <Button
+      title="Delete"
+      onPress={() => {
+        setDeleteConfirmationId(baby.id);
+      }}
+    />
+  )}
 
   </View>
 ))}
