@@ -15,11 +15,18 @@ import {
   getAllBabies,
   updateBaby,
 } from "../../services/database/babies";
+import { createMeasurement, getMeasurementsByBaby } from "../../services/database/measurements";
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
 
 const [babyName, setBabyName] = useState("");
+
+const [weightKg, setWeightKg] = useState("");
+
+const [lengthCm, setLengthCm] = useState("");
+
+const [headCircumferenceCm, setHeadCircumferenceCm] = useState("");
 
 const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
 
@@ -29,6 +36,9 @@ const [deleteConfirmationId, setDeleteConfirmationId] =
   useState<string | null>(null);
 
 const [babies, setBabies] = useState<Baby[]>([]);
+
+const [latestMeasurements, setLatestMeasurements] =
+  useState<Record<string, any>>({});
 
 // Access the currently selected baby so other screens can
 // use the same selection throughout the app.
@@ -42,6 +52,21 @@ useEffect(() => {
       console.log("Babies loaded:", allBabies);
 
       setBabies(allBabies);
+
+      const measurementsMap: Record<string, any> = {};
+
+      for (const baby of allBabies) {
+        const measurements =
+          await getMeasurementsByBaby(baby.id);
+
+        if (measurements.length > 0) {
+          measurementsMap[baby.id] =
+            measurements[0];
+        }
+      }
+
+      setLatestMeasurements(measurementsMap);
+
     } catch (error) {
       console.error(
         "Failed loading babies:",
@@ -73,6 +98,22 @@ useEffect(() => {
       {baby.name}
     </Text>
 
+{latestMeasurements[baby.id] && (
+  <>
+    <Text style={styles.note}>
+      Weight: {latestMeasurements[baby.id].weight_kg ?? "--"} kg
+    </Text>
+
+    <Text style={styles.note}>
+      Length: {latestMeasurements[baby.id].length_cm ?? "--"} cm
+    </Text>
+
+    <Text style={styles.note}>
+      Head Circumference: {latestMeasurements[baby.id].head_circumference_cm ?? "--"} cm
+    </Text>
+  </>
+)}
+
 {editingBabyId === baby.id && (
   <>
     <TextInput
@@ -92,10 +133,34 @@ useEffect(() => {
           editedName
         );
 
-        const allBabies =
-          await getAllBabies();
+        const allBabies = await getAllBabies();
 
         setBabies(allBabies);
+
+        const measurementsMap: Record<string, any> = {};
+
+        for (const baby of allBabies) {
+          const measurements =
+            await getMeasurementsByBaby(baby.id);
+
+          console.log(
+            "Measurements for",
+            baby.name,
+            measurements
+          );
+
+          if (measurements.length > 0) {
+            measurementsMap[baby.id] =
+              measurements[0];
+          }
+        }
+
+        console.log(
+          "Measurements map:",
+          measurementsMap
+        );
+
+        setLatestMeasurements(measurementsMap);
 
         setEditingBabyId(null);
         setEditedName("");
@@ -109,7 +174,7 @@ useEffect(() => {
         setEditedName("");
       }}
     />
-    
+
   </>
 )}
 
@@ -187,6 +252,27 @@ useEffect(() => {
   onChangeText={setBabyName}
 />
 
+<TextInput
+  style={styles.input}
+  placeholder="Weight in kilograms (e.g., 3.5)"
+  value={weightKg}
+  onChangeText={setWeightKg}
+/>
+
+<TextInput
+  style={styles.input}
+  placeholder="Length in centimeters (e.g., 50)"
+  value={lengthCm}
+  onChangeText={setLengthCm}
+/>
+
+<TextInput
+  style={styles.input}
+  placeholder="Head Circumference in centimeters (e.g., 34)"
+  value={headCircumferenceCm}
+  onChangeText={setHeadCircumferenceCm}
+/>
+
 <Button
   title="Create Baby"
   onPress={async () => {
@@ -199,10 +285,49 @@ useEffect(() => {
 
     await createBaby(newBaby);
 
+    if (
+      weightKg ||
+      lengthCm ||
+      headCircumferenceCm
+    ) {
+      await createMeasurement({
+        id: Date.now().toString() + "-measurement",
+        baby_id: newBaby.id,
+        weight_kg: weightKg
+          ? Number(weightKg)
+          : null,
+        length_cm: lengthCm
+          ? Number(lengthCm)
+          : null,
+        head_circumference_cm:
+          headCircumferenceCm
+            ? Number(headCircumferenceCm)
+            : null,
+      });
+    }
+
     const allBabies = await getAllBabies();
+
+    const measurementsMap: Record<string, any> = {};
+
+    for (const baby of allBabies) {
+      const measurements =
+        await getMeasurementsByBaby(baby.id);
+
+      if (measurements.length > 0) {
+        measurementsMap[baby.id] =
+          measurements[0];
+      }
+    }
+
+    setLatestMeasurements(measurementsMap);
+
     setBabies(allBabies);
 
     setBabyName("");
+    setWeightKg("");
+    setLengthCm("");
+    setHeadCircumferenceCm("");
   }}
 />
     </View>
