@@ -34,6 +34,8 @@ const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
 
 const [editedName, setEditedName] = useState("");
 
+const [editedBirthDate, setEditedBirthDate] = useState("");
+
 const [addingMeasurementId, setAddingMeasurementId] =
   useState<string | null>(null);
 
@@ -148,6 +150,13 @@ useEffect(() => {
       placeholder="Enter new baby name"
     />
 
+    <TextInput
+      style={styles.input}
+      value={editedBirthDate}
+      onChangeText={setEditedBirthDate}
+      placeholder="Birth Date (YYYY-MM-DD)"
+    />
+
     <Button
       title="Save"
       onPress={async () => {
@@ -155,7 +164,8 @@ useEffect(() => {
 
         await updateBaby(
           baby.id,
-          editedName
+          editedName,
+          editedBirthDate || null
         );
 
         const allBabies = await getAllBabies();
@@ -189,6 +199,7 @@ useEffect(() => {
 
         setEditingBabyId(null);
         setEditedName("");
+        setEditedBirthDate("");
       }}
     />
 
@@ -197,6 +208,7 @@ useEffect(() => {
       onPress={() => {
         setEditingBabyId(null);
         setEditedName("");
+        setEditedBirthDate("");
       }}
     />
 
@@ -215,6 +227,9 @@ useEffect(() => {
         onPress={() => {
           setEditingBabyId(baby.id);
           setEditedName(baby.name);
+          setEditedBirthDate(
+            baby.birth_date ?? ""
+          );
         }}
       />
     )}

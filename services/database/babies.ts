@@ -50,15 +50,21 @@ export async function getAllBabies(): Promise<Baby[]> {
 
 export async function updateBaby(
   id: string,
-  name: string
+  name: string,
+  birthDate: string | null
 ): Promise<void> {
   const db = await getDatabase();
 
   await db.runAsync(
     `UPDATE babies
-     SET name = ?
+     SET name = ?,
+         birth_date = ?
      WHERE id = ?`,
-    [name, id]
+    [
+      name,
+      birthDate,
+      id
+    ]
   );
 }
 
