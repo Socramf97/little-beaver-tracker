@@ -22,6 +22,8 @@ export default function BabyProfilesScreen() {
 
 const [babyName, setBabyName] = useState("");
 
+const [birthDate, setBirthDate] = useState("");
+
 const [weightKg, setWeightKg] = useState("");
 
 const [lengthCm, setLengthCm] = useState("");
@@ -31,6 +33,16 @@ const [headCircumferenceCm, setHeadCircumferenceCm] = useState("");
 const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
 
 const [editedName, setEditedName] = useState("");
+
+const [addingMeasurementId, setAddingMeasurementId] =
+  useState<string | null>(null);
+
+const [newWeight, setNewWeight] = useState("");
+
+const [newLength, setNewLength] = useState("");
+
+const [newHeadCircumference, setNewHeadCircumference] =
+  useState("");
 
 const [deleteConfirmationId, setDeleteConfirmationId] =
   useState<string | null>(null);
@@ -96,6 +108,10 @@ useEffect(() => {
   <View key={baby.id} style={styles.babyCard}>
     <Text style={styles.sectionHeader}>
       {baby.name}
+    </Text>
+
+    <Text style={styles.note}>
+      Birth Date: {baby.birth_date ?? "Not Set"}
     </Text>
 
 {latestMeasurements[baby.id] && (
@@ -194,15 +210,105 @@ useEffect(() => {
 
     {editingBabyId !== baby.id &&
     deleteConfirmationId !== baby.id && (
+      <Button
+        title="Edit"
+        onPress={() => {
+          setEditingBabyId(baby.id);
+          setEditedName(baby.name);
+        }}
+      />
+    )}
+
+    {addingMeasurementId !== baby.id && (
+      <Button
+        title="Add Measurement"
+        onPress={() => {
+          setAddingMeasurementId(baby.id);
+        }}
+      />
+    )}
+
+    {addingMeasurementId === baby.id && (
+  <>
+    <TextInput
+      style={styles.input}
+      placeholder="Weight (kg)"
+      value={newWeight}
+      onChangeText={setNewWeight}
+    />
+
+    <TextInput
+      style={styles.input}
+      placeholder="Length (cm)"
+      value={newLength}
+      onChangeText={setNewLength}
+    />
+
+    <TextInput
+      style={styles.input}
+      placeholder="Head Circumference (cm)"
+      value={newHeadCircumference}
+      onChangeText={setNewHeadCircumference}
+    />
 
     <Button
-      title="Edit"
-      onPress={() => {
-        setEditingBabyId(baby.id);
-        setEditedName(baby.name);
+      title="Save Measurement"
+      onPress={async () => {
+        if (
+          !newWeight &&
+          !newLength &&
+          !newHeadCircumference
+        ) {
+          return;
+        }
+        await createMeasurement({
+          id: Date.now().toString(),
+          baby_id: baby.id,
+          weight_kg: newWeight
+            ? Number(newWeight)
+            : null,
+          length_cm: newLength
+            ? Number(newLength)
+            : null,
+          head_circumference_cm:
+            newHeadCircumference
+              ? Number(newHeadCircumference)
+              : null,
+        });
+
+        const measurements =
+          await getMeasurementsByBaby(baby.id);
+
+        console.log(
+          "Measurement history:",
+          measurements
+        );
+
+        if (measurements.length > 0) {
+          setLatestMeasurements({
+            ...latestMeasurements,
+            [baby.id]: measurements[0],
+          });
+        }
+
+        setAddingMeasurementId(null);
+        setNewWeight("");
+        setNewLength("");
+        setNewHeadCircumference("");
       }}
     />
-  )}
+
+    <Button
+      title="Cancel"
+      onPress={() => {
+        setAddingMeasurementId(null);
+        setNewWeight("");
+        setNewLength("");
+        setNewHeadCircumference("");
+      }}
+    />
+  </>
+)}
 
     {deleteConfirmationId === baby.id && (
   <>
@@ -279,6 +385,13 @@ useEffect(() => {
 
 <TextInput
   style={styles.input}
+  placeholder="Birth Date (YYYY-MM-DD)"
+  value={birthDate}
+  onChangeText={setBirthDate}
+/>
+
+<TextInput
+  style={styles.input}
   placeholder="Weight in kilograms (e.g., 3.5)"
   value={weightKg}
   onChangeText={setWeightKg}
@@ -306,6 +419,7 @@ useEffect(() => {
     const newBaby = {
       id: Date.now().toString(),
       name: babyName,
+      birth_date: birthDate || null,
     };
 
     await createBaby(newBaby);
@@ -350,6 +464,7 @@ useEffect(() => {
     setBabies(allBabies);
 
     setBabyName("");
+    setBirthDate("");
     setWeightKg("");
     setLengthCm("");
     setHeadCircumferenceCm("");
