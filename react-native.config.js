@@ -12,5 +12,8 @@ module.exports = {
         },
       },
     },
+    "@picovoice/react-native-voice-processor": {
+      platforms: { ios: null },
+    },
   },
 };

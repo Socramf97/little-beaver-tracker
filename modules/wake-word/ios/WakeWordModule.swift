@@ -2,7 +2,7 @@ import ExpoModulesCore
 import AVFoundation
 import LiveKitWakeWord
 
-final class ModelNotFoundException: GenericException<String> {
+final class ModelNotFoundException: GenericException<String>, @unchecked Sendable {
   override var reason: String {
     "Model '\(param).onnx' was not found in the app bundle"
   }
@@ -12,8 +12,6 @@ public class WakeWordModule: Module {
   private var listener: WakeWordListener?
   private var detectionTask: Task<Void, Never>?
   private var model: WakeWordModel?
-
-  private var tap: Int = 0
 
   public func definition() -> ModuleDefinition {
     Name("WakeWord")
@@ -50,7 +48,7 @@ public class WakeWordModule: Module {
       }
 
       self.detectionTask = Task {[weak self] in
-        for await detection in await listener.detections() {
+        for await detection in listener.detections() {
           self?.sendEvent("onWakeWord", [
             "name": detection.name,
             "confidence": detection.confidence

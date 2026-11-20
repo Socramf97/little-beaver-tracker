@@ -5,7 +5,6 @@ import { Text, View } from "react-native";
 import { Conversation } from "./Conversation";
 import EmptyState from "./EmptyState";
 import Footer from "./Footer";
-import { Header } from "./Header";
 import { styles } from "./Styles";
 
 import { useBabies } from "@/hooks/useBabies";
@@ -34,6 +33,7 @@ export default function VoiceTestScreen() {
     return () => {
       cancelled = true;
       abortListening();
+      console.log("MIC OFF");
     };
   }, [loading]);
 

@@ -19,7 +19,7 @@ type Options = {
   enabled?: boolean;
 };
 
-const IS_SUPPORTED = Platform.OS === "ios";
+const IS_SUPPORTED = Platform.OS === "ios" || Platform.OS === "android";
 
 export function useWakeWord({ onDetect, enabled = true }: Options) {
   const [status, setStatus] = useState<WakeWordStatus>(
@@ -33,6 +33,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
   // 1. Subscribe to detection events once.
   useEffect(() => {
     if (!IS_SUPPORTED) return;
+
     const sub = WakeWord.addListener("onWakeWord", (e) =>
       onDetectRef.current(e),
     );

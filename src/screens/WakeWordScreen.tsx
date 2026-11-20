@@ -1,29 +1,7 @@
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Linking,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Button, Linking, StyleSheet, Text, View } from "react-native";
 import { useWakeWord, WakeWordStatus } from "../../modules/wake-word";
-
-import { Asset } from "expo-asset";
-
-async function inspectModel() {
-  const { InferenceSession } = require("onnxruntime-react-native"); // ← loaded only when called
-
-  const [asset] = await Asset.loadAsync(
-    require("../../modules/wake-word/ios/models/hey_beaver.onnx"), // adjust path from your screen file
-  );
-  console.log("model filesss:", asset.localUri);
-
-  const session = await InferenceSession.create(asset.localUri!);
-  console.log("INPUTS:", session.inputNames);
-  console.log("OUTPUTS:", session.outputNames);
-}
 
 export default function WakeWordScreen() {
   const router = useRouter();
@@ -53,13 +31,6 @@ export default function WakeWordScreen() {
         <View style={[styles.dot, { backgroundColor: STATUS_COLOR[status] }]} />
         <Text style={styles.status}>{STATUS_LABEL[status]}</Text>
       </View>
-
-      {Platform.OS === "android" && (
-        <Button
-          title="Inspect model"
-          onPress={() => inspectModel().catch(console.error)}
-        />
-      )}
 
       <Text style={styles.count}>{heardCount}</Text>
       <Text style={styles.caption}>times heard</Text>
