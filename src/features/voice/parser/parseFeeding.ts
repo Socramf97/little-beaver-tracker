@@ -98,6 +98,8 @@ export function findAmount(text: string[]): {
       return { amount: Number(before), unit };
     }
   }
+  const unitSaid = text.map(toUnit).find((u) => u !== undefined);
+
   for (let i = 0; i < text.length; i++) {
     const word = text[i];
     const next = text[i + 1];
@@ -106,7 +108,7 @@ export function findAmount(text: string[]): {
     if (!isNumber(word)) continue;
     if (next !== undefined && TIME_WORDS.has(next)) continue; // 3 pm or 20 minutes
     if (before === "at") continue; // at 3
-    return { amount: Number(word) };
+    return { amount: Number(word), unit: unitSaid };
   }
 
   return {};

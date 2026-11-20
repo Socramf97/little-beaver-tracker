@@ -3,12 +3,22 @@
 
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function HomeScreen() {
+  // Shows which baby is currently active throughout the app.
+  const { activeBaby } = useActiveBaby();
   return (
     <View style={styles.container}>
       {/* App title displayed at the top of the home screen */}
+      
       <Text style={styles.title}>Little Beaver Tracker</Text>
+
+      <Text style={styles.note}>
+        {activeBaby
+          ? `Current Baby: ${activeBaby.name}`
+          : "No Baby Selected"}
+      </Text>
 
       {/* Space reserved for future features like quick actions or baby summaries */}
       <Text style={styles.note}>

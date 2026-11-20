@@ -194,6 +194,14 @@ export function findBaby(
   return undefined;
 }
 
+function saysNumberOneOrTwo(words: string[]): boolean {
+  for (let i = 0; i < words.length; i++) {
+    const next = words[i + 1];
+    if (words[i] === "number" && (next === "1" || next === "2")) return true;
+  }
+  return false;
+}
+
 export function findCommandKind(words: string[]): CommandKind {
   const hasMeasurements = words.some((w) => MEASUREMENT_WORDS.has(w));
   const hasOther = words.some((w) => NOT_MEASUREMENT_WORDS.has(w));
@@ -202,7 +210,7 @@ export function findCommandKind(words: string[]): CommandKind {
     return "measurement";
   }
 
-  if (words.some((w) => DIAPER_WORDS.has(w))) {
+  if (words.some((w) => DIAPER_WORDS.has(w)) || saysNumberOneOrTwo(words)) {
     return "diaper";
   }
 

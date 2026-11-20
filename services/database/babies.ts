@@ -47,3 +47,59 @@ export async function getAllBabies(): Promise<Baby[]> {
     'SELECT * FROM babies ORDER BY created_at DESC'
   );
 }
+
+export async function updateBaby(
+  id: string,
+  name: string,
+  birthDate: string | null
+): Promise<void> {
+  const db = await getDatabase();
+
+  await db.runAsync(
+    `UPDATE babies
+     SET name = ?,
+         birth_date = ?
+     WHERE id = ?`,
+    [
+      name,
+      birthDate,
+      id
+    ]
+  );
+}
+
+export async function deleteBaby(
+  id: string
+): Promise<void> {
+  const db = await getDatabase();
+
+  await db.runAsync(
+    `DELETE FROM feeding_events
+     WHERE baby_id = ?`,
+    [id]
+  );
+
+  await db.runAsync(
+    `DELETE FROM diaper_events
+     WHERE baby_id = ?`,
+    [id]
+  );
+
+  await db.runAsync(
+    `DELETE FROM measurements
+     WHERE baby_id = ?`,
+    [id]
+  );
+
+  await db.runAsync(
+    `DELETE FROM photo_attachments
+     WHERE baby_id = ?`,
+    [id]
+  );
+
+  await db.runAsync(
+    `DELETE FROM babies
+     WHERE id = ?`,
+    [id]
+  );
+}
