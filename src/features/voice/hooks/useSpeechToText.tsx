@@ -55,7 +55,7 @@ export function useSpeechToText(babies: BabyRef[]) {
 
   const nextMsgId = useRef(0);
   const fullCommand = useRef(""); // holds the FULL command if needed more info
-  // const appResponse = useRef<string | null>(null); // HOLD the response after mic is off to send
+  const pendingReply = useRef<string | null>(null); // reply waiting for the mic to turn off
   const micOn = useRef(false); // ONLY speak after the mic is OFF or might hear itself
   const listenAfterSpeaking = useRef(false); // IF we need to ask another question
   const questions = useRef<QuestionState>(EMPTY_QUESTIONS); // tracking how many times we ask the same question
@@ -67,6 +67,24 @@ export function useSpeechToText(babies: BabyRef[]) {
     const id = String(nextMsgId.current);
     setMessages((prev) => [...prev, { id, from, text }]);
   }
+
+  function speakReply(reply: string) {
+    addMessage("app", reply);
+    setPhase("speaking");
+
+    Speech.speak(reply, {
+      onDone: () => {
+        if (listenAfterSpeaking.current) {
+          listenAfterSpeaking.current = false;
+          handleStartListening();
+        } else {
+          setPhase((p) => (p === "speaking" ? "stopped" : p));
+        }
+      },
+      onStopped: () => setPhase((p) => (p === "speaking" ? "stopped" : p)),
+    });
+  }
+
   // When we want to restart EX: Finishing a command
   function resetCommand() {
     fullCommand.current = "";
@@ -106,7 +124,7 @@ export function useSpeechToText(babies: BabyRef[]) {
 
   const startNewCommand = (shouldContinue: () => boolean = () => true) => {
     resetCommand();
-    // setMessages([]);
+    setMessages([]);
     setResult(null);
     handleStartListening(shouldContinue);
   };
@@ -125,6 +143,7 @@ export function useSpeechToText(babies: BabyRef[]) {
     Speech.stop();
     setPhase("stopped");
     micOn.current = false;
+    pendingReply.current = null;
     resetCommand();
   };
 
@@ -145,6 +164,12 @@ export function useSpeechToText(babies: BabyRef[]) {
     micOn.current = false;
     console.log("MIC OFF");
     silence.clear();
+    if (pendingReply.current) {
+      const reply = pendingReply.current;
+      pendingReply.current = null;
+      speakReply(reply);
+      return;
+    }
     setPhase((p) => (p === "listening" ? "stopped" : p));
   });
 
@@ -178,6 +203,9 @@ export function useSpeechToText(babies: BabyRef[]) {
       babies,
       activeBaby?.id,
     );
+    // Abort clears the fullcommand, so if it is empty that means we have aborted so don't need to speak the next command.
+
+    if (!fullCommand.current) return;
     setResult(res.result.status);
     let reply = res.text;
 
@@ -197,21 +225,11 @@ export function useSpeechToText(babies: BabyRef[]) {
       resetCommand();
     }
 
-    addMessage("app", reply);
-    setPhase("speaking");
-
-    Speech.speak(reply, {
-      // we want to check IF we need more info IF so we turn the mic back on.
-      onDone: () => {
-        if (listenAfterSpeaking.current) {
-          listenAfterSpeaking.current = false;
-          handleStartListening();
-        } else {
-          setPhase((p) => (p === "speaking" ? "stopped" : p));
-        }
-      },
-      onStopped: () => setPhase((p) => (p === "speaking" ? "stopped" : p)),
-    });
+    if (micOn.current) {
+      pendingReply.current = reply; // mic still on: wait for "end"
+    } else {
+      speakReply(reply); // mic already off: speak now
+    }
   });
 
   // ERROR EVENT
