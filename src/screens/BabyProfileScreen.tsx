@@ -1,6 +1,6 @@
 // Baby profile management screen
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   StyleSheet,
@@ -8,17 +8,89 @@ import {
   TextInput,
   View
 } from "react-native";
+import {
+  Baby,
+  createBaby,
+  deleteBaby,
+  getAllBabies,
+  updateBaby,
+} from "../../services/database/babies";
+import { createMeasurement, getMeasurementsByBaby } from "../../services/database/measurements";
+import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
 
 const [babyName, setBabyName] = useState("");
 
-const [babies, setBabies] = useState([
-  { id: "1", name: "Kelly" },
-  { id: "2", name: "Blake" },
-]);
+const [birthDate, setBirthDate] = useState("");
 
-const [activeBaby, setActiveBaby] = useState<any>(null);
+const [weightKg, setWeightKg] = useState("");
+
+const [lengthCm, setLengthCm] = useState("");
+
+const [headCircumferenceCm, setHeadCircumferenceCm] = useState("");
+
+const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
+
+const [editedName, setEditedName] = useState("");
+
+const [editedBirthDate, setEditedBirthDate] = useState("");
+
+const [addingMeasurementId, setAddingMeasurementId] =
+  useState<string | null>(null);
+
+const [newWeight, setNewWeight] = useState("");
+
+const [newLength, setNewLength] = useState("");
+
+const [newHeadCircumference, setNewHeadCircumference] =
+  useState("");
+
+const [deleteConfirmationId, setDeleteConfirmationId] =
+  useState<string | null>(null);
+
+const [babies, setBabies] = useState<Baby[]>([]);
+
+const [latestMeasurements, setLatestMeasurements] =
+  useState<Record<string, any>>({});
+
+// Access the currently selected baby so other screens can
+// use the same selection throughout the app.
+const { activeBaby, setActiveBaby } = useActiveBaby();
+
+useEffect(() => {
+  async function initializeBabies() {
+    try {
+      const allBabies = await getAllBabies();
+
+      console.log("Babies loaded:", allBabies);
+
+      setBabies(allBabies);
+
+      const measurementsMap: Record<string, any> = {};
+
+      for (const baby of allBabies) {
+        const measurements =
+          await getMeasurementsByBaby(baby.id);
+
+        if (measurements.length > 0) {
+          measurementsMap[baby.id] =
+            measurements[0];
+        }
+      }
+
+      setLatestMeasurements(measurementsMap);
+
+    } catch (error) {
+      console.error(
+        "Failed loading babies:",
+        error
+      );
+    }
+  }
+
+  initializeBabies();
+}, []);
 
   return (
     <View style={styles.container}>
@@ -40,37 +112,248 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
       {baby.name}
     </Text>
 
+    <Text style={styles.note}>
+      Birth Date: {baby.birth_date ?? "Not Set"}
+    </Text>
+
+{latestMeasurements[baby.id] && (
+  <>
+    <Text style={styles.note}>
+      Weight: {latestMeasurements[baby.id].weight_kg ?? "--"} kg
+    </Text>
+
+    <Text style={styles.note}>
+      Length: {latestMeasurements[baby.id].length_cm ?? "--"} cm
+    </Text>
+
+    <Text style={styles.note}>
+      Head Circumference: {latestMeasurements[baby.id].head_circumference_cm ?? "--"} cm
+    </Text>
+
+    <Text style={styles.note}>
+      Recorded:
+      {" "}
+      {new Date(
+        latestMeasurements[baby.id].timestamp
+      ).toLocaleDateString()}
+    </Text>
+
+  </>
+)}
+
+{editingBabyId === baby.id && (
+  <>
+    <TextInput
+      style={styles.input}
+      value={editedName}
+      onChangeText={setEditedName}
+      placeholder="Enter new baby name"
+    />
+
+    <TextInput
+      style={styles.input}
+      value={editedBirthDate}
+      onChangeText={setEditedBirthDate}
+      placeholder="Birth Date (YYYY-MM-DD)"
+    />
+
+    <Button
+      title="Save"
+      onPress={async () => {
+        if (!editedName.trim()) return;
+
+        await updateBaby(
+          baby.id,
+          editedName,
+          editedBirthDate || null
+        );
+
+        const allBabies = await getAllBabies();
+
+        setBabies(allBabies);
+
+        const measurementsMap: Record<string, any> = {};
+
+        for (const baby of allBabies) {
+          const measurements =
+            await getMeasurementsByBaby(baby.id);
+
+          console.log(
+            "Measurements for",
+            baby.name,
+            measurements
+          );
+
+          if (measurements.length > 0) {
+            measurementsMap[baby.id] =
+              measurements[0];
+          }
+        }
+
+        console.log(
+          "Measurements map:",
+          measurementsMap
+        );
+
+        setLatestMeasurements(measurementsMap);
+
+        setEditingBabyId(null);
+        setEditedName("");
+        setEditedBirthDate("");
+      }}
+    />
+
+    <Button
+      title="Cancel"
+      onPress={() => {
+        setEditingBabyId(null);
+        setEditedName("");
+        setEditedBirthDate("");
+      }}
+    />
+
+  </>
+)}
+
     <Button
       title="Select"
       onPress={() => setActiveBaby(baby)}
     />
 
-    <Button
-      title="Edit"
-      onPress={() => {
-        const newName = "Edited Baby";
+    {editingBabyId !== baby.id &&
+    deleteConfirmationId !== baby.id && (
+      <Button
+        title="Edit"
+        onPress={() => {
+          setEditingBabyId(baby.id);
+          setEditedName(baby.name);
+          setEditedBirthDate(
+            baby.birth_date ?? ""
+          );
+        }}
+      />
+    )}
 
-        setBabies(
-          babies.map((currentBaby) =>
-            currentBaby.id === baby.id
-              ? {
-                  ...currentBaby,
-                  name: newName,
-                }
-              : currentBaby
-          )
+    {addingMeasurementId !== baby.id && (
+      <Button
+        title="Add Measurement"
+        onPress={() => {
+          setAddingMeasurementId(baby.id);
+        }}
+      />
+    )}
+
+    {addingMeasurementId === baby.id && (
+  <>
+    <TextInput
+      style={styles.input}
+      placeholder="Weight (kg)"
+      value={newWeight}
+      onChangeText={setNewWeight}
+    />
+
+    <TextInput
+      style={styles.input}
+      placeholder="Length (cm)"
+      value={newLength}
+      onChangeText={setNewLength}
+    />
+
+    <TextInput
+      style={styles.input}
+      placeholder="Head Circumference (cm)"
+      value={newHeadCircumference}
+      onChangeText={setNewHeadCircumference}
+    />
+
+    <Button
+      title="Save Measurement"
+      onPress={async () => {
+        if (
+          !newWeight &&
+          !newLength &&
+          !newHeadCircumference
+        ) {
+          return;
+        }
+        await createMeasurement({
+          id: Date.now().toString(),
+          baby_id: baby.id,
+          weight_kg: newWeight
+            ? Number(newWeight)
+            : null,
+          length_cm: newLength
+            ? Number(newLength)
+            : null,
+          head_circumference_cm:
+            newHeadCircumference
+              ? Number(newHeadCircumference)
+              : null,
+        });
+
+        const measurements =
+          await getMeasurementsByBaby(baby.id);
+
+        console.log(
+          "Measurement history:",
+          measurements
         );
+
+        if (measurements.length > 0) {
+          setLatestMeasurements({
+            ...latestMeasurements,
+            [baby.id]: measurements[0],
+          });
+        }
+
+        setAddingMeasurementId(null);
+        setNewWeight("");
+        setNewLength("");
+        setNewHeadCircumference("");
       }}
     />
 
     <Button
-      title="Delete"
+      title="Cancel"
       onPress={() => {
-        setBabies(
-          babies.filter(
-            (currentBaby) => currentBaby.id !== baby.id
-          )
-        );
+        setAddingMeasurementId(null);
+        setNewWeight("");
+        setNewLength("");
+        setNewHeadCircumference("");
+      }}
+    />
+  </>
+)}
+
+    {deleteConfirmationId === baby.id && (
+  <>
+    <Text style={styles.note}>
+      Are you sure you want to delete {baby.name}?
+    </Text>
+
+    <Button
+      title="Yes Delete"
+      onPress={async () => {
+        await deleteBaby(baby.id);
+
+        const allBabies =
+          await getAllBabies();
+
+        setBabies(allBabies);
+
+        const measurementsMap: Record<string, any> = {};
+
+        for (const baby of allBabies) {
+          const measurements =
+            await getMeasurementsByBaby(baby.id);
+
+          if (measurements.length > 0) {
+            measurementsMap[baby.id] =
+              measurements[0];
+          }
+        }
+
+        setLatestMeasurements(measurementsMap);
 
         if (
           activeBaby &&
@@ -78,8 +361,28 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
         ) {
           setActiveBaby(null);
         }
+
+        setDeleteConfirmationId(null);
       }}
     />
+
+    <Button
+      title="Cancel"
+      onPress={() => {
+        setDeleteConfirmationId(null);
+      }}
+    />
+  </>
+)}
+
+    {deleteConfirmationId !== baby.id && (
+    <Button
+      title="Delete"
+      onPress={() => {
+        setDeleteConfirmationId(baby.id);
+      }}
+    />
+  )}
 
   </View>
 ))}
@@ -95,23 +398,91 @@ const [activeBaby, setActiveBaby] = useState<any>(null);
   onChangeText={setBabyName}
 />
 
+<TextInput
+  style={styles.input}
+  placeholder="Birth Date (YYYY-MM-DD)"
+  value={birthDate}
+  onChangeText={setBirthDate}
+/>
+
+<TextInput
+  style={styles.input}
+  placeholder="Weight in kilograms (e.g., 3.5)"
+  value={weightKg}
+  onChangeText={setWeightKg}
+/>
+
+<TextInput
+  style={styles.input}
+  placeholder="Length in centimeters (e.g., 50)"
+  value={lengthCm}
+  onChangeText={setLengthCm}
+/>
+
+<TextInput
+  style={styles.input}
+  placeholder="Head Circumference in centimeters (e.g., 34)"
+  value={headCircumferenceCm}
+  onChangeText={setHeadCircumferenceCm}
+/>
+
 <Button
   title="Create Baby"
-  onPress={() => {
+  onPress={async () => {
     if (!babyName.trim()) return;
 
-    setBabies([
-  ...babies,
-  {
-    id: Date.now().toString(),
-    name: babyName,
-  },
-]);
+    const newBaby = {
+      id: Date.now().toString(),
+      name: babyName,
+      birth_date: birthDate || null,
+    };
 
+    await createBaby(newBaby);
+
+    if (
+      weightKg ||
+      lengthCm ||
+      headCircumferenceCm
+    ) {
+      await createMeasurement({
+        id: Date.now().toString() + "-measurement",
+        baby_id: newBaby.id,
+        weight_kg: weightKg
+          ? Number(weightKg)
+          : null,
+        length_cm: lengthCm
+          ? Number(lengthCm)
+          : null,
+        head_circumference_cm:
+          headCircumferenceCm
+            ? Number(headCircumferenceCm)
+            : null,
+      });
+    }
+
+    const allBabies = await getAllBabies();
+
+    const measurementsMap: Record<string, any> = {};
+
+    for (const baby of allBabies) {
+      const measurements =
+        await getMeasurementsByBaby(baby.id);
+
+      if (measurements.length > 0) {
+        measurementsMap[baby.id] =
+          measurements[0];
+      }
+    }
+
+    setLatestMeasurements(measurementsMap);
+
+    setBabies(allBabies);
 
     setBabyName("");
-
-    console.log(babyName);
+    setBirthDate("");
+    setWeightKg("");
+    setLengthCm("");
+    setHeadCircumferenceCm("");
   }}
 />
     </View>

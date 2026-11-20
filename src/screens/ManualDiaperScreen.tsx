@@ -1,9 +1,12 @@
 import { createEvent } from "@/features/events/eventServices";
+import { Picker } from '@react-native-picker/picker';
 import { useState } from "react";
+import { EventValidationError } from "../features/events/validation";
+import { useActiveBaby } from "../hooks/useActiveBaby";
+import { sharedStyles } from "../styles/sharedStyles";
 
 import {
   Button,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,50 +15,61 @@ import {
 export default function ManualDiaperScreen() {
   const [diaperType, setDiaperType] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Use the currently selected baby so diaper entries
+  // are saved to the correct profile throughout the app.
+  const { activeBaby } = useActiveBaby();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
+    <View style={sharedStyles.container}>
+      <Text style={sharedStyles.title}>
         Manual Diaper Entry
       </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Diaper Type (pee, poop, both)"
-        value={diaperType}
-        onChangeText={setDiaperType}
-      />
+     <Picker
+        selectedValue={diaperType}
+        onValueChange={(itemValue) => setDiaperType(itemValue)}
+      >
+        <Picker.Item label="Select Diaper Type" value="" />
+        <Picker.Item label="Pee" value="pee" />
+        <Picker.Item label="Poop" value="poop" />
+        <Picker.Item label="Both" value="both" />
+      </Picker>
 
       <TextInput
-        style={styles.input}
+        style={sharedStyles.input}
         placeholder="Notes"
         value={notes}
         onChangeText={setNotes}
       />
 
-      <View style={styles.buttonContainer}>
+      <View style={sharedStyles.buttonContainer}>
         <Button
           title="Save Diaper Event"
           onPress={async () => {
             try {
+              // A diaper event should always belong to a baby profile.
+              // Prevent saving until a baby has been selected.
+              if (!activeBaby) {
+                alert("Please select a baby profile first.");
+                return;
+              }
               await createEvent({
                 kind: "diaper",
-                babyId: "test-baby",
+                babyId: activeBaby.id,
                 diaperType,
                 notes,
                 timestamp: new Date(),
               });
 
               alert("Diaper event saved successfully!");
-
-              console.log("Diaper Type:", diaperType);
-              console.log("Notes:", notes);
-
           } catch (error) {
-            if (error instanceof Error) {
-              alert(error.message);
+            if (error instanceof EventValidationError) {
+              alert(error.errors[0].message);
+            } else if (error instanceof Error) {
+                alert(error.message);
             } else {
-              alert("Validation failed.");
+                alert("Validation failed.");
             }
           }
         }}
@@ -64,28 +78,3 @@ export default function ManualDiaperScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-
-  buttonContainer: {
-    marginTop: 10,
-  },
-});
