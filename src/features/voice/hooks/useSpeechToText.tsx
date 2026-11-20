@@ -1,4 +1,4 @@
-import { VoiceSaveResult } from "@/features/voice/saveVoiceCommand";
+// Libraries Used
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -6,7 +6,14 @@ import {
 
 import * as Speech from "expo-speech";
 
+// React
 import { useRef, useState } from "react";
+
+// Types
+import { VoiceSaveResult } from "@/features/voice/saveVoiceCommand";
+import { BabyRef } from "../types";
+
+// Other Functions
 import { handleCommand } from "./handleCommand";
 import {
   EMPTY_QUESTIONS,
@@ -14,7 +21,8 @@ import {
   trackQuestion,
 } from "./questionTracker";
 
-import { BabyRef } from "../types";
+// Hooks
+import { useActiveBaby } from "@/hooks/useActiveBaby";
 import { IDLE_MS, PAUSE_MS, useSilenceTimer } from "./useSilenceTimer";
 
 export type Phase =
@@ -31,6 +39,8 @@ export type Message = {
 };
 
 export function useSpeechToText(babies: BabyRef[]) {
+  // hooks used
+  const { activeBaby } = useActiveBaby();
   // --- STATES --- -> For the screen
   const [phase, setPhase] = useState<Phase>("starting");
   const [result, setResult] = useState<
@@ -162,7 +172,12 @@ export function useSpeechToText(babies: BabyRef[]) {
 
     fullCommand.current = (fullCommand.current + " " + text).trim();
 
-    const res = await handleCommand(fullCommand.current, babies);
+    // the actual command that passes to parser
+    const res = await handleCommand(
+      fullCommand.current,
+      babies,
+      activeBaby?.id,
+    );
     setResult(res.result.status);
     let reply = res.text;
 
