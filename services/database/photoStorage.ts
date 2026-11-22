@@ -102,10 +102,7 @@ export async function listBabyPhotos(
 ): Promise<PhotoAttachment[]> {
   const photos = await getPhotosByBaby(babyId);
 
-  return photos.map((photo) => ({
-    ...photo,
-    file_uri: resolvePhotoUri(photo.file_uri),
-  }));
+  return photos;
 }
 
 /**
@@ -117,10 +114,7 @@ export async function listEventPhotos(
 ): Promise<PhotoAttachment[]> {
   const photos = await getPhotosByEvent(eventId, eventType);
 
-  return photos.map((photo) => ({
-    ...photo,
-    file_uri: resolvePhotoUri(photo.file_uri),
-  }));
+  return photos;
 }
 
 /**

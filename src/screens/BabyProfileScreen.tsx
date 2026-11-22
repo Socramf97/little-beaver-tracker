@@ -1,8 +1,10 @@
 // Baby profile management screen
 
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   Button,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +18,15 @@ import {
   updateBaby,
 } from "../../services/database/babies";
 import { createMeasurement, getMeasurementsByBaby } from "../../services/database/measurements";
+import {
+  listBabyPhotos,
+  removePhoto
+} from "../../services/database/photoStorage";
+
+import {
+  createPhotoAttachment
+} from "../../services/database/photos";
+
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
@@ -58,6 +69,12 @@ const [latestMeasurements, setLatestMeasurements] =
 // use the same selection throughout the app.
 const { activeBaby, setActiveBaby } = useActiveBaby();
 
+const [babyPhotos, setBabyPhotos] =
+  useState<Record<string, any[]>>({});
+
+const [uploadingPhotoForBaby, setUploadingPhotoForBaby] =
+  useState<string | null>(null);
+
 useEffect(() => {
   async function initializeBabies() {
     try {
@@ -80,6 +97,15 @@ useEffect(() => {
       }
 
       setLatestMeasurements(measurementsMap);
+
+      const photosMap: Record<string, any[]> = {};
+
+      for (const baby of allBabies) {
+        photosMap[baby.id] =
+          await listBabyPhotos(baby.id);
+      }
+
+      setBabyPhotos(photosMap);
 
     } catch (error) {
       console.error(
@@ -140,6 +166,34 @@ useEffect(() => {
 
   </>
 )}
+
+{babyPhotos[baby.id]?.map((photo) => (
+  <View key={photo.id}>
+    <Image
+      source={{ uri: photo.file_uri }}
+      style={{
+        width: 120,
+        height: 120,
+        marginVertical: 5,
+      }}
+    />
+
+    <Button
+      title="Delete Photo"
+      onPress={async () => {
+        await removePhoto(photo.id);
+
+        const updatedPhotos =
+          await listBabyPhotos(baby.id);
+
+        setBabyPhotos({
+          ...babyPhotos,
+          [baby.id]: updatedPhotos,
+        });
+      }}
+    />
+  </View>
+))}
 
 {editingBabyId === baby.id && (
   <>
@@ -324,6 +378,35 @@ useEffect(() => {
     />
   </>
 )}
+
+    <Button
+      title="Add Photo"
+      onPress={async () => {
+        const result =
+          await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            quality: 0.8,
+          });
+
+        if (result.canceled) {
+          return;
+        }
+
+        await createPhotoAttachment({
+          id: Date.now().toString(),
+          baby_id: baby.id,
+          file_uri: result.assets[0].uri,
+        });
+
+        const updatedPhotos =
+          await listBabyPhotos(baby.id);
+
+        setBabyPhotos({
+          ...babyPhotos,
+          [baby.id]: updatedPhotos,
+        });
+      }}
+    />
 
     {deleteConfirmationId === baby.id && (
   <>
