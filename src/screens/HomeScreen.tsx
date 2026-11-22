@@ -20,14 +20,12 @@ export default function HomeScreen() {
           : "No Baby Selected"}
       </Text>
 
-      {/* Space reserved for future features like quick actions or baby summaries */}
       <Text style={styles.note}>
         <Text style={styles.subtitle}>
         Track feedings, diaper changes, and baby care history.
         </Text>
       </Text>
 
-      {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={styles.linkButton}>
         Voice Assistant
       </Link>

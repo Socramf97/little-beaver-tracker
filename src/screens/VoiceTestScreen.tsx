@@ -1,18 +1,28 @@
-// THIS IS TEMPORARY WILL DELETE LATER
+// Voice recognition screen used to test and interact with
+// the application's speech-to-text functionality.
 
-import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { useActiveBaby } from "../hooks/useActiveBaby";
+import { sharedStyles } from "../styles/sharedStyles";
 
 export default function VoiceTestScreen() {
+
+  const { activeBaby } = useActiveBaby();
+  
+  // Tracks speech recognition status, recognized text,
+  // and any errors returned by the speech engine.
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState("");
 
-  // we subscribe to events and listen and get back information
+  // Subscribe to speech recognition events and update
+  // the interface as speech recognition starts, stops,
+  // returns results, or encounters errors.
 
   useSpeechRecognitionEvent("start", () => setListening(true));
   useSpeechRecognitionEvent("end", () => setListening(false));
@@ -24,6 +34,8 @@ export default function VoiceTestScreen() {
     setError(`${e.error}: ${e.message}`);
   });
 
+  // Request microphone permission and start
+  // a new speech recognition session.
   const handleStart = async () => {
     setError("");
     // make sure we have permission
@@ -41,7 +53,18 @@ export default function VoiceTestScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 16, justifyContent: "center" }}>
+    <View style={sharedStyles.container}>
+
+      <Text style={sharedStyles.title}>
+        Voice Assistant
+      </Text>
+
+      <Text>
+        {activeBaby
+          ? `Current Baby: ${activeBaby.name}`
+          : "No Baby Selected"}
+      </Text>
+
       <Pressable
         onPress={
           listening ? () => ExpoSpeechRecognitionModule.stop() : handleStart
@@ -53,9 +76,14 @@ export default function VoiceTestScreen() {
         }}
       >
         <Text style={{ color: "white", fontSize: 20, textAlign: "center" }}>
-          {listening ? "Stop" : "Hold on, I'm talking"}
+          {listening ? "Stop Listening" : "Start Listening"}
         </Text>
       </Pressable>
+
+      <Text style={{ fontWeight: "bold" }}>
+        Recognized Speech
+      </Text>
+
       <Text style={{ fontSize: 18 }}>{transcript || "Say something…"}</Text>
       {error.length > 0 && <Text style={{ color: "red" }}>{error}</Text>}
     </View>

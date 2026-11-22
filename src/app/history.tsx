@@ -11,11 +11,10 @@ import { useActiveBaby } from "../hooks/useActiveBaby";
 export default function HistoryScreen() {
   const { activeBaby } = useActiveBaby();
 
-  console.log("Active Baby:", activeBaby);
-
-  // Stores the events returned from the history service.
+  // State the events returned from the history service.
   const [events, setEvents] = useState<HistoryEvent[]>([]); 
 
+  // State used for editing and deleting history entries.
   const [deleteConfirmationId, setDeleteConfirmationId] =
   useState<string | null>(null);
 
@@ -31,37 +30,33 @@ export default function HistoryScreen() {
   const [editNotes, setEditNotes] =
   useState("");
 
- const [editDiaperType, setEditDiaperType] =
- useState("");
+  const [editDiaperType, setEditDiaperType] =
+  useState("");
 
   const [editValue, setEditValue] =
- useState("");
+  useState("");
 
- const [editWeight, setEditWeight] =
- useState("");
+  const [editWeight, setEditWeight] =
+  useState("");
 
-const [editLength, setEditLength] =
- useState("");
+  const [editLength, setEditLength] =
+  useState("");
 
-const [editHeadCircumference, setEditHeadCircumference] =
- useState("");
+  const [editHeadCircumference, setEditHeadCircumference] =
+  useState("");
   
-  // Reload history whenever a different baby is selected.
-useEffect(() => {
-  async function loadHistory() {
-    if (!activeBaby) {
-      setEvents([]);
-      return;
-    }
+  // Load the selected baby's event history whenever active baby profile changes.
+  useEffect(() => {
+    async function loadHistory() {
+      if (!activeBaby) {
+        setEvents([]);
+        return;
+      }
 
     try {
       const history = await getEventHistory({
         babyId: activeBaby.id,
       });
-
-      // Temporary log so we can verify history is being returned
-      // before building the visual display.
-      console.log("History Events:", history);
 
       setEvents(history);
     } catch (error) {
@@ -94,6 +89,7 @@ useEffect(() => {
         </Text>
       )}
       
+      {/* Display all recorded events for the active baby. */}
       {events.map((event) => (
         <View key={event.id} style={styles.eventCard}>
           <Text style={styles.message}>
@@ -131,9 +127,11 @@ useEffect(() => {
             {new Date(event.timestamp).toLocaleString()}
           </Text>
 
+          {/* Show event-specific editing controls for feedings, diapers, and measurements. */}
           {editingEventId === event.id && (
 
           <>
+            {/* Feeding event editor. */}
             {event.event_type === "feeding" && (
             <>
 
@@ -224,7 +222,7 @@ useEffect(() => {
               />
             </>
             )}
-
+            {/* Diaper event editor. */}
             {event.event_type === "diaper" && (
             <>
               <Picker
@@ -297,6 +295,7 @@ useEffect(() => {
             </>
             )}
 
+            {/* Measurement event editor. */}
             {event.event_type === "measurement" && (
             <>
               <TextInput
@@ -376,6 +375,7 @@ useEffect(() => {
             </>
             )}
 
+          {/* Confirm before permanently deleting an event. */}
           {deleteConfirmationId === event.id ? (
           <>
             <Text style={styles.message}>
@@ -416,11 +416,13 @@ useEffect(() => {
           </>
           ) : (
           <>
+            {/* Populate editing fields with existing event values. */}
             <Button
               title="Edit Entry"
               onPress={() => {
                 setEditingEventId(event.id);
 
+                // Preload the current event values into the edit form.
                 setEditValue(
                   event.amount?.toString() ?? ""
                 );

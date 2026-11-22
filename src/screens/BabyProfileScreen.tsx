@@ -32,6 +32,7 @@ import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
 
+// State used for creating, editing and managing baby profiles.
 const [babyName, setBabyName] = useState("");
 
 const [birthDate, setBirthDate] = useState("");
@@ -63,6 +64,8 @@ const [deleteConfirmationId, setDeleteConfirmationId] =
 
 const [babies, setBabies] = useState<Baby[]>([]);
 
+// Stores the latest measurement record for each baby.
+// Keyed by baby ID.
 const [latestMeasurements, setLatestMeasurements] =
   useState<Record<string, any>>({});
 
@@ -70,18 +73,16 @@ const [latestMeasurements, setLatestMeasurements] =
 // use the same selection throughout the app.
 const { activeBaby, setActiveBaby } = useActiveBaby();
 
+// Stores photos associated with each baby profile.
+// Keyed by baby ID.
 const [babyPhotos, setBabyPhotos] =
   useState<Record<string, any[]>>({});
 
-const [uploadingPhotoForBaby, setUploadingPhotoForBaby] =
-  useState<string | null>(null);
-
+// Load baby profiles, latest measurements, and photos when screen first opens.
 useEffect(() => {
   async function initializeBabies() {
     try {
       const allBabies = await getAllBabies();
-
-      console.log("Babies loaded:", allBabies);
 
       setBabies(allBabies);
 
@@ -140,6 +141,7 @@ useEffect(() => {
         Baby ID: {activeBaby ? activeBaby.id : "None"}
       </Text>
 
+{/* Display each baby profile and its related information */}
 {babies.map((baby) => (
   <View key={baby.id} style={styles.babyCard}>
     <Text style={styles.sectionHeader}>
@@ -175,6 +177,7 @@ useEffect(() => {
   </>
 )}
 
+{/* Display saved photos associated with this baby profile. */}
 {babyPhotos[baby.id]?.map((photo) => (
   <View key={photo.id}>
     <Image
@@ -203,6 +206,7 @@ useEffect(() => {
   </View>
 ))}
 
+{/* Edit mode allows updating a baby's name and birth date. */}
 {editingBabyId === baby.id && (
   <>
     <TextInput
@@ -253,22 +257,11 @@ useEffect(() => {
           const measurements =
             await getMeasurementsByBaby(baby.id);
 
-          console.log(
-            "Measurements for",
-            baby.name,
-            measurements
-          );
-
           if (measurements.length > 0) {
             measurementsMap[baby.id] =
               measurements[0];
           }
         }
-
-        console.log(
-          "Measurements map:",
-          measurementsMap
-        );
 
         setLatestMeasurements(measurementsMap);
 
@@ -309,6 +302,7 @@ useEffect(() => {
       />
     )}
 
+    {/* Add measurement entry for the selected baby. */}
     {addingMeasurementId !== baby.id && (
       <Button
         title="Add Measurement"
@@ -382,11 +376,6 @@ useEffect(() => {
         const measurements =
           await getMeasurementsByBaby(baby.id);
 
-        console.log(
-          "Measurement history:",
-          measurements
-        );
-
         if (measurements.length > 0) {
           setLatestMeasurements({
             ...latestMeasurements,
@@ -412,7 +401,7 @@ useEffect(() => {
     />
   </>
 )}
-
+    {/* Select and attach a photo to the current baby profile. */}
     <Button
       title="Add Photo"
       onPress={async () => {
@@ -441,7 +430,7 @@ useEffect(() => {
         });
       }}
     />
-
+    {/* Confirm before permanently deleting a baby profile. */}
     {deleteConfirmationId === baby.id && (
   <>
     <Text style={styles.note}>
@@ -504,6 +493,7 @@ useEffect(() => {
   </View>
 ))}
 
+{/* Form used to create a new baby profile and optional measurement record. */}
 <Text style={styles.sectionHeader}>
   Add New Baby
 </Text>
@@ -547,6 +537,7 @@ useEffect(() => {
   Measurements are optional and can be added or updated later.
 </Text>
 
+{/* Validate user input, create baby profile, and save initial measurement if provided. */}
 <Button
   title="Create Baby"
   onPress={async () => {

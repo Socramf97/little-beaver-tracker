@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 export default function ManualFeedingScreen() {
+  // State used to capture manual feeding details entered by the user.
   const [feedingType, setFeedingType] = useState("");
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState("");
@@ -28,6 +29,7 @@ export default function ManualFeedingScreen() {
         Manual Feeding Entry
       </Text>
 
+      {/* Feeding type selection. */}
       <Picker
         selectedValue={feedingType}
         onValueChange={(itemValue) => setFeedingType(itemValue)}
@@ -62,6 +64,7 @@ export default function ManualFeedingScreen() {
       />
 
       <View style={sharedStyles.buttonContainer}>
+        {/* Validate input and create a feeding event for the active baby. */}
         <Button
           title="Save Feeding"
           onPress={async () => {
@@ -87,7 +90,7 @@ export default function ManualFeedingScreen() {
       timestamp: new Date(),
     });
 
-    alert("Feeding validated successfully!");
+    alert("Feeding saved successfully!");
     
     setFeedingType("");
     setAmount("");
