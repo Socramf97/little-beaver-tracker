@@ -58,7 +58,7 @@ describe('getEventHistory', () => {
     expect(sql).toContain('UNION ALL');
     expect(sql).toContain('feeding_events');
     expect(sql).toContain('diaper_events');
-    expect(params).toEqual(['baby-1', 'baby-1']);
+    expect(params).toEqual(['baby-1', 'baby-1', 'baby-1']);
   });
 
   test('requests newest-first ordering', async () => {
@@ -112,6 +112,7 @@ describe('getEventHistory', () => {
     expect(params).toEqual([
       'baby-1',
       'baby-1',
+      'baby-1',
       startDate,
       endDate,
     ]);
@@ -124,9 +125,9 @@ describe('getEventHistory', () => {
 
     expect(
       (sql.match(/WHERE baby_id = \?/g) ?? []).length
-    ).toBe(2);
+    ).toBe(3);
 
-    expect(params).toEqual(['baby-2', 'baby-2']);
+    expect(params).toEqual(['baby-2', 'baby-2', 'baby-2']);
   });
 
   test('rejects an empty baby ID', async () => {
