@@ -1,10 +1,11 @@
+import { Picker } from "@react-native-picker/picker";
 import { useEffect, useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   getEventHistory,
   HistoryEvent,
 } from "../../services/database/history";
-import { deleteEvent } from "../features/events/eventServices";
+import { deleteEvent, updateEvent } from "../features/events/eventServices";
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function HistoryScreen() {
@@ -17,6 +18,33 @@ export default function HistoryScreen() {
 
   const [deleteConfirmationId, setDeleteConfirmationId] =
   useState<string | null>(null);
+
+  const [editingEventId, setEditingEventId] =
+  useState<string | null>(null);
+
+  const [editFeedingType, setEditFeedingType] =
+  useState("");
+
+  const [editUnit, setEditUnit] =
+  useState("");
+
+  const [editNotes, setEditNotes] =
+  useState("");
+
+ const [editDiaperType, setEditDiaperType] =
+ useState("");
+
+  const [editValue, setEditValue] =
+ useState("");
+
+ const [editWeight, setEditWeight] =
+ useState("");
+
+const [editLength, setEditLength] =
+ useState("");
+
+const [editHeadCircumference, setEditHeadCircumference] =
+ useState("");
   
   // Reload history whenever a different baby is selected.
 useEffect(() => {
@@ -103,6 +131,251 @@ useEffect(() => {
             {new Date(event.timestamp).toLocaleString()}
           </Text>
 
+          {editingEventId === event.id && (
+
+          <>
+            {event.event_type === "feeding" && (
+            <>
+
+              <Picker
+                selectedValue={editFeedingType}
+                onValueChange={(itemValue) =>
+                  setEditFeedingType(itemValue)
+                }
+                >
+                <Picker.Item
+                  label="Breast"
+                  value="breast"
+                />
+                <Picker.Item
+                  label="Bottle"
+                  value="bottle"
+                />
+                <Picker.Item
+                  label="Formula"
+                  value="formula"
+                />
+                </Picker>
+
+              <TextInput
+              style={styles.input}
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder="Amount"
+              />
+
+              <Picker
+                selectedValue={editUnit}
+                onValueChange={(itemValue) =>
+                  setEditUnit(itemValue)
+                }
+                >
+                <Picker.Item
+                  label="oz"
+                  value="oz"
+                />
+                <Picker.Item
+                  label="mL"
+                  value="mL"
+                />
+                </Picker>
+
+                <TextInput
+                  style={styles.input}
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  placeholder="Notes"
+                  />
+
+              <Button
+              title="Save Edit"
+              onPress={async () => {
+                try {
+                await updateEvent(event.id, {
+                  kind: "feeding",
+                  babyId: event.baby_id,
+                  feedingType: editFeedingType,
+                  amount: Number(editValue),
+                  unit: editUnit,
+                  notes: editNotes,
+                  timestamp: new Date(event.timestamp),
+                });
+
+                const history =
+                  await getEventHistory({
+                  babyId: activeBaby!.id,
+                  });
+
+                setEvents(history);
+                setEditingEventId(null);
+                setEditValue("");
+                } catch (error) {
+                alert("Failed to update entry.");
+                }
+              }}
+              />
+
+              <Button
+              title="Cancel Edit"
+              onPress={() => {
+                setEditingEventId(null);
+                setEditValue("");
+              }}
+              />
+            </>
+            )}
+
+            {event.event_type === "diaper" && (
+            <>
+              <Picker
+              selectedValue={editDiaperType}
+              onValueChange={(itemValue) =>
+                setEditDiaperType(itemValue)
+              }
+              >
+              <Picker.Item
+                label="Pee"
+                value="pee"
+              />
+
+              <Picker.Item
+                label="Poop"
+                value="poop"
+              />
+
+              <Picker.Item
+                label="Both"
+                value="both"
+              />
+              </Picker>
+
+              <TextInput
+              style={styles.input}
+              value={editNotes}
+              onChangeText={setEditNotes}
+              placeholder="Notes"
+              />
+
+              <Button
+              title="Save Edit"
+              onPress={async () => {
+                try {
+                await updateEvent(event.id, {
+                  kind: "diaper",
+                  babyId: event.baby_id,
+                  diaperType: editDiaperType,
+                  notes: editNotes,
+                  timestamp: new Date(event.timestamp),
+                });
+
+                const history =
+                  await getEventHistory({
+                  babyId: activeBaby!.id,
+                  });
+
+                setEvents(history);
+
+                setEditingEventId(null);
+
+                setEditNotes("");
+                setEditDiaperType("");
+
+                } catch (error) {
+                alert("Failed to update entry.");
+                }
+              }}
+              />
+
+              <Button
+              title="Cancel Edit"
+              onPress={() => {
+                setEditingEventId(null);
+                setEditNotes("");
+                setEditDiaperType("");
+              }}
+              />
+            </>
+            )}
+
+            {event.event_type === "measurement" && (
+            <>
+              <TextInput
+              style={styles.input}
+              value={editWeight}
+              onChangeText={setEditWeight}
+              placeholder="Weight (kg)"
+              />
+
+              <TextInput
+              style={styles.input}
+              value={editLength}
+              onChangeText={setEditLength}
+              placeholder="Length (cm)"
+              />
+
+              <TextInput
+              style={styles.input}
+              value={editHeadCircumference}
+              onChangeText={setEditHeadCircumference}
+              placeholder="Head Circumference (cm)"
+              />
+
+              <Button
+              title="Save Edit"
+              onPress={async () => {
+                try {
+
+                await updateEvent(event.id, {
+                  kind: "measurement",
+                  babyId: event.baby_id,
+                  weightKg: editWeight
+                  ? Number(editWeight)
+                  : undefined,
+                  lengthCm: editLength
+                  ? Number(editLength)
+                  : undefined,
+                  headCircumferenceCm:
+                  editHeadCircumference
+                    ? Number(editHeadCircumference)
+                    : undefined,
+                  timestamp: new Date(event.timestamp),
+                });
+
+                const history =
+                  await getEventHistory({
+                  babyId: activeBaby!.id,
+                  });
+
+                setEvents(history);
+
+                setEditingEventId(null);
+
+                setEditWeight("");
+                setEditLength("");
+                setEditHeadCircumference("");
+
+                } catch (error) {
+                alert("Failed to update entry.");
+                }
+              }}
+              />
+
+              <Button
+              title="Cancel Edit"
+              onPress={() => {
+                setEditingEventId(null);
+
+                setEditWeight("");
+                setEditLength("");
+                setEditHeadCircumference("");
+              }}
+              />
+            </>
+            )}
+
+            </>
+            )}
+
           {deleteConfirmationId === event.id ? (
           <>
             <Text style={styles.message}>
@@ -142,12 +415,53 @@ useEffect(() => {
             />
           </>
           ) : (
-          <Button
-            title="Delete Entry"
-            onPress={() =>
-            setDeleteConfirmationId(event.id)
-            }
-          />
+          <>
+            <Button
+              title="Edit Entry"
+              onPress={() => {
+                setEditingEventId(event.id);
+
+                setEditValue(
+                  event.amount?.toString() ?? ""
+                );
+
+                setEditFeedingType(
+                  event.feeding_type ?? ""
+                );
+
+                setEditUnit(
+                  event.unit ?? ""
+                );
+
+                setEditNotes(
+                  event.notes ?? ""
+                );
+
+                setEditDiaperType(
+                  event.diaper_type ?? ""
+                  );
+
+                setEditWeight(
+                  event.weight_kg?.toString() ?? ""
+                  );
+
+                  setEditLength(
+                  event.length_cm?.toString() ?? ""
+                  );
+
+                  setEditHeadCircumference(
+                  event.head_circumference_cm?.toString() ?? ""
+                  );
+                }}
+            />
+
+            <Button
+              title="Delete Entry"
+              onPress={() =>
+              setDeleteConfirmationId(event.id)
+              }
+            />
+            </>
           )}
 
         </View>
@@ -212,5 +526,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 8,
+    marginVertical: 5,
+    backgroundColor: "#fff",
+    },
 
 });
