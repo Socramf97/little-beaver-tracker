@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   getEventHistory,
   HistoryEvent,
 } from "../../services/database/history";
+import { deleteEvent } from "../features/events/eventServices";
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function HistoryScreen() {
@@ -13,6 +14,9 @@ export default function HistoryScreen() {
 
   // Stores the events returned from the history service.
   const [events, setEvents] = useState<HistoryEvent[]>([]); 
+
+  const [deleteConfirmationId, setDeleteConfirmationId] =
+  useState<string | null>(null);
   
   // Reload history whenever a different baby is selected.
 useEffect(() => {
@@ -41,7 +45,10 @@ useEffect(() => {
 }, [activeBaby]);
 
   return (
-    <View style={styles.container}>
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+      >
       <Text style={styles.title}>
         Event History
       </Text>
@@ -53,39 +60,106 @@ useEffect(() => {
       </Text>
 
     <View style={styles.historyCard}>
+      {events.length === 0 && (
+        <Text style={styles.note}>
+          No events recorded yet.
+        </Text>
+      )}
+      
       {events.map((event) => (
         <View key={event.id} style={styles.eventCard}>
           <Text style={styles.message}>
             {event.event_type === "feeding"
-              ? `${event.feeding_type} Feeding`
+              ? `${event.feeding_type?.charAt(0).toUpperCase()}${event.feeding_type?.slice(1)} Feeding`
               : event.event_type === "diaper"
-              ? `${event.diaper_type} Diaper`
+              ? `${event.diaper_type?.charAt(0).toUpperCase()}${event.diaper_type?.slice(1)} Diaper`
               : "Measurement"}
-          </Text>
+            </Text>
 
           <Text style={styles.message}>
-            {event.event_type === "feeding"
-              ? `${event.amount ?? ""} ${event.unit ?? ""}`
-              : event.event_type === "diaper"
-              ? event.notes ?? ""
-              : `Weight: ${event.weight_kg ?? "--"} kg | Length: ${event.length_cm ?? "--"} cm | Head: ${event.head_circumference_cm ?? "--"} cm`}
+            {event.event_type === "feeding" &&
+            event.amount !== null && (
+              <Text style={styles.message}>
+                {event.amount} {event.unit ?? ""}
+              </Text>
+            )}
+
+            {event.event_type === "diaper" &&
+            event.notes && (
+              <Text style={styles.message}>
+                {event.notes}
+              </Text>
+            )}
+
+            {event.event_type === "measurement" && (
+              <Text style={styles.message}>
+                Weight: {event.weight_kg ?? "--"} kg | Length: {event.length_cm ?? "--"} cm | Head: {event.head_circumference_cm ?? "--"} cm
+              </Text>
+            )}
+
           </Text>
 
           <Text style={styles.message}>
             {new Date(event.timestamp).toLocaleString()}
           </Text>
 
+          {deleteConfirmationId === event.id ? (
+          <>
+            <Text style={styles.message}>
+            Are you sure you want to delete this entry?
+            </Text>
+
+            <Button
+            title="Yes Delete"
+            onPress={async () => {
+              try {
+              await deleteEvent(
+                event.event_type,
+                event.id
+              );
+
+              if (activeBaby) {
+                const history =
+                await getEventHistory({
+                  babyId: activeBaby.id,
+                });
+
+                setEvents(history);
+              }
+
+              setDeleteConfirmationId(null);
+              } catch (error) {
+              alert("Failed to delete entry.");
+              }
+            }}
+            />
+
+            <Button
+            title="Cancel"
+            onPress={() =>
+              setDeleteConfirmationId(null)
+            }
+            />
+          </>
+          ) : (
+          <Button
+            title="Delete Entry"
+            onPress={() =>
+            setDeleteConfirmationId(event.id)
+            }
+          />
+          )}
+
         </View>
       ))}
 
 </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     alignItems: "center",
     backgroundColor: "#F8F6F1",

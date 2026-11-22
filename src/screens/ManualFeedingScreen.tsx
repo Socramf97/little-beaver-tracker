@@ -70,6 +70,11 @@ export default function ManualFeedingScreen() {
       alert("Please select a baby profile first.");
       return;
   }
+
+    if (!amount.trim()) {
+      alert("Please enter an amount.");
+      return;
+    }
     await createEvent({
       kind: "feeding",
       babyId: activeBaby?.id,
@@ -83,6 +88,12 @@ export default function ManualFeedingScreen() {
     });
 
     alert("Feeding validated successfully!");
+    
+    setFeedingType("");
+    setAmount("");
+    setUnit("");
+    setNotes("");
+
   } catch (error) {
       if (error instanceof EventValidationError) {
         alert(error.errors[0].message);

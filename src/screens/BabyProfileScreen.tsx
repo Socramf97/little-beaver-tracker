@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -119,7 +120,7 @@ useEffect(() => {
 }, []);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.sectionHeader}>
          Baby Profiles
       </Text>
@@ -127,6 +128,13 @@ useEffect(() => {
       <Text style={styles.note}>
         Active Baby: {activeBaby ? activeBaby.name : "None Selected"}
       </Text>
+
+      {activeBaby && (
+        <Button
+          title="Clear Active Baby"
+          onPress={() => setActiveBaby(null)}
+        />
+      )}
 
       <Text style={styles.note}>
         Baby ID: {activeBaby ? activeBaby.id : "None"}
@@ -215,6 +223,19 @@ useEffect(() => {
       title="Save"
       onPress={async () => {
         if (!editedName.trim()) return;
+
+        if (
+          editedBirthDate &&
+          !/^\d{4}-\d{2}-\d{2}$/.test(
+            editedBirthDate
+          )
+        ) {
+          alert(
+            "Please enter birth date as YYYY-MM-DD"
+          );
+
+          return;
+        }
 
         await updateBaby(
           baby.id,
@@ -328,6 +349,19 @@ useEffect(() => {
           !newLength &&
           !newHeadCircumference
         ) {
+          return;
+        }
+
+        if (
+          (newWeight && Number(newWeight) <= 0) ||
+          (newLength && Number(newLength) <= 0) ||
+          (newHeadCircumference &&
+            Number(newHeadCircumference) <= 0)
+        ) {
+          alert(
+            "Measurements must be greater than zero"
+          );
+
           return;
         }
         await createMeasurement({
@@ -509,10 +543,48 @@ useEffect(() => {
   onChangeText={setHeadCircumferenceCm}
 />
 
+<Text style={styles.note}>
+  Measurements are optional and can be added or updated later.
+</Text>
+
 <Button
   title="Create Baby"
   onPress={async () => {
-    if (!babyName.trim()) return;
+    if (!babyName.trim()) {
+      alert("Please enter a baby name");
+      return;
+    }
+
+    if (!birthDate.trim()) {
+      alert("Please enter a birth date");
+      return;
+    }
+
+    if (
+      birthDate &&
+      !/^\d{4}-\d{2}-\d{2}$/.test(
+        birthDate
+      )
+    ) {
+      alert(
+        "Please enter birth date as YYYY-MM-DD"
+      );
+
+      return;
+    }
+
+    if (
+      (weightKg && Number(weightKg) <= 0) ||
+      (lengthCm && Number(lengthCm) <= 0) ||
+      (headCircumferenceCm &&
+        Number(headCircumferenceCm) <= 0)
+    ) {
+      alert(
+        "Measurements must be greater than zero"
+      );
+
+      return;
+    }
 
     const newBaby = {
       id: Date.now().toString(),
@@ -568,15 +640,13 @@ useEffect(() => {
     setHeadCircumferenceCm("");
   }}
 />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
-    justifyContent: "center",
     alignItems: "center",
   },
 
