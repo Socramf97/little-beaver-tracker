@@ -58,13 +58,17 @@ useEffect(() => {
           <Text style={styles.message}>
             {event.event_type === "feeding"
               ? `${event.feeding_type} Feeding`
-              : `${event.diaper_type} Diaper`}
+              : event.event_type === "diaper"
+              ? `${event.diaper_type} Diaper`
+              : "Measurement"}
           </Text>
 
           <Text style={styles.message}>
             {event.event_type === "feeding"
               ? `${event.amount ?? ""} ${event.unit ?? ""}`
-              : event.notes ?? ""}
+              : event.event_type === "diaper"
+              ? event.notes ?? ""
+              : `Weight: ${event.weight_kg ?? "--"} kg | Length: ${event.length_cm ?? "--"} cm | Head: ${event.head_circumference_cm ?? "--"} cm`}
           </Text>
 
           <Text style={styles.message}>
