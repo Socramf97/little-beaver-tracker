@@ -17,13 +17,19 @@ export type VoiceSaveResult =
 export async function saveVoiceCommand(
   transcript: string,
   babies: BabyRef[],
+  activeBabyId?: string,
 ): Promise<VoiceSaveResult> {
   const parsed = parseCommands(transcript, babies);
-  const draft = toEventDraft(parsed.command);
+  const parsedDraft = toEventDraft(parsed.command);
 
-  if (!draft) {
+  if (!parsedDraft) {
     return { status: "notUnderstood" };
   }
+
+  const draft = {
+    ...parsedDraft,
+    babyId: parsedDraft.babyId ?? activeBabyId,
+  };
 
   // Measurements can't be saved yet, so catch it before calling the service
   if (draft.kind === "measurement") {

@@ -4,8 +4,9 @@ import { BabyRef } from "../types";
 export async function handleCommand(
   text: string,
   babies: BabyRef[],
+  activeBabyId?: string,
 ): Promise<{ result: VoiceSaveResult; text: string }> {
-  const result = await saveVoiceCommand(text, babies);
+  const result = await saveVoiceCommand(text, babies, activeBabyId);
   switch (result.status) {
     case "saved":
       return { result, text: result.message };
