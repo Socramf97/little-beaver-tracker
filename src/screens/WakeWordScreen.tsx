@@ -23,6 +23,8 @@ export default function WakeWordScreen() {
   const { status, error, start } = useWakeWord({
     enabled: enabled && pathname !== "/voice-test",
     onDetect: (d) => {
+      console.log("🎯 onDetect", AppState.currentState, d.confidence);
+
       if (AppState.currentState === "active") {
         setHeardCount((c) => c + 1);
         setLastHeard(`${d.name} · ${(d.confidence * 100).toFixed(0)}%`);
