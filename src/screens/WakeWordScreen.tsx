@@ -21,7 +21,7 @@ export default function WakeWordScreen() {
   });
 
   useEffect(() => {
-    if (heardCount === 0) return; // don't navigate on first render
+    if (heardCount === 0) return; // don't navigate on first render -
     router.navigate("/voice-test");
   }, [router, heardCount]);
 
