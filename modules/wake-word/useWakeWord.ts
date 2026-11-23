@@ -21,6 +21,8 @@ type Options = {
 
 const IS_SUPPORTED = Platform.OS === "ios" || Platform.OS === "android";
 
+const KEEP_LISTENING_IN_BACKGROUND = Platform.OS === "ios";
+
 export function useWakeWord({ onDetect, enabled = true }: Options) {
   const [status, setStatus] = useState<WakeWordStatus>(
     IS_SUPPORTED ? "idle" : "unsupported",
@@ -81,7 +83,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
 
     const sub = AppState.addEventListener("change", (next) => {
       if (next === "active") start();
-      else if (next === "background") stop();
+      else if (next === "background" && !KEEP_LISTENING_IN_BACKGROUND) stop();
     });
 
     return () => {
