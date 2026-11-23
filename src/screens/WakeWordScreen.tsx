@@ -1,6 +1,15 @@
+import * as Notifications from "expo-notifications";
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Button, Linking, StyleSheet, Text, View } from "react-native";
+import {
+  AppState,
+  Button,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useWakeWord, WakeWordStatus } from "../../modules/wake-word";
 
 export default function WakeWordScreen() {
@@ -14,9 +23,21 @@ export default function WakeWordScreen() {
   const { status, error, start } = useWakeWord({
     enabled: enabled && pathname !== "/voice-test",
     onDetect: (d) => {
-      setHeardCount((c) => c + 1);
-      setLastHeard(`${d.name} · ${(d.confidence * 100).toFixed(0)}%`);
-      console.log("logged hey beaver");
+      if (AppState.currentState === "active") {
+        setHeardCount((c) => c + 1);
+        setLastHeard(`${d.name} · ${(d.confidence * 100).toFixed(0)}%`);
+        console.log("logged hey beaver");
+      } else {
+        Notifications.scheduleNotificationAsync({
+          identifier: "hey-beaver",
+          content: {
+            title: "Hey Beaver!",
+            body: "Tap to talk to Beaver",
+            data: { url: "/voice-test" },
+          },
+          trigger: null,
+        }).catch(console.warn);
+      }
     },
   });
 
@@ -24,6 +45,20 @@ export default function WakeWordScreen() {
     if (heardCount === 0) return; // don't navigate on first render -
     router.navigate("/voice-test");
   }, [router, heardCount]);
+
+  // ask for permission, android needs
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === "android") {
+        // notifications need a channel; create it before asking permission
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "Wake word alerts",
+          importance: Notifications.AndroidImportance.HIGH, // pops up on screen
+        });
+      }
+      await Notifications.requestPermissionsAsync();
+    })().catch(console.warn);
+  }, []);
 
   return (
     <View style={styles.container}>
