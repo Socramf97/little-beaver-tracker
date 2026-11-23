@@ -7,16 +7,12 @@ class WakeWordModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("WakeWord")
 
-    Events("onChange")
-
-    Function("hello") {
-      "Hello world! 👋"
+    Function("startBackgroundService") {
+      appContext.reactContext?.let { WakeWordService.start(it) }
     }
 
-    AsyncFunction("setValueAsync") { value: String ->
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
+    Function("stopBackgroundService") {
+      appContext.reactContext?.let { WakeWordService.stop(it) }
     }
   }
 }

@@ -62,7 +62,8 @@
       ],
       "expo-sqlite",
       "onnxruntime-react-native",
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withoutPushEntitlement"
     ],
     "experiments": {
       "typedRoutes": true,

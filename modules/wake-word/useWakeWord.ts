@@ -21,7 +21,8 @@ type Options = {
 
 const IS_SUPPORTED = Platform.OS === "ios" || Platform.OS === "android";
 
-const KEEP_LISTENING_IN_BACKGROUND = Platform.OS === "ios";
+const KEEP_LISTENING_IN_BACKGROUND =
+  Platform.OS === "ios" || Platform.OS === "android";
 
 export function useWakeWord({ onDetect, enabled = true }: Options) {
   const [status, setStatus] = useState<WakeWordStatus>(

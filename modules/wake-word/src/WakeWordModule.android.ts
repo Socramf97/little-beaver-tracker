@@ -8,6 +8,11 @@ import { File } from "expo-file-system";
 import * as ort from "onnxruntime-react-native";
 import { PermissionsAndroid } from "react-native";
 
+import { requireNativeModule } from "expo";
+
+// Module needs for foreground listening for background to work
+const NativeWakeWord = requireNativeModule("WakeWord");
+
 type Detection = { name: string; confidence: number };
 type Listener = (d: Detection) => void;
 
@@ -76,6 +81,10 @@ const WakeWordAndroid = {
       const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
       );
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      );
+
       return result === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
       console.warn(err);
@@ -89,6 +98,7 @@ const WakeWordAndroid = {
     starting = true;
     try {
       await loadModel();
+      NativeWakeWord.startBackgroundService();
       // reset the leftover audio from previous session
       model?.reset();
 
@@ -99,6 +109,7 @@ const WakeWordAndroid = {
     } catch (e) {
       voiceProcessor.removeFrameListener(onFrame);
       voiceProcessor.removeErrorListener(onError);
+      NativeWakeWord.stopBackgroundService();
       throw e;
     } finally {
       starting = false;
@@ -114,7 +125,7 @@ const WakeWordAndroid = {
     voiceProcessor.removeErrorListener(onError);
     // turn mic off
     await voiceProcessor.stop();
-
+    NativeWakeWord.stopBackgroundService();
     model?.reset(); // forget old audio, so the next start begins fresh
   },
 
