@@ -3,6 +3,7 @@
 
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import WakeWordScreen from "./WakeWordScreen";
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function HomeScreen() {
@@ -11,22 +12,19 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* App title displayed at the top of the home screen */}
-      
+
       <Text style={styles.title}>Little Beaver Tracker</Text>
 
       <Text style={styles.note}>
-        {activeBaby
-          ? `Current Baby: ${activeBaby.name}`
-          : "No Baby Selected"}
+        {activeBaby ? `Current Baby: ${activeBaby.name}` : "No Baby Selected"}
       </Text>
 
       {/* Space reserved for future features like quick actions or baby summaries */}
       <Text style={styles.note}>
         <Text style={styles.subtitle}>
-        Track feedings, diaper changes, and baby care history.
+          Track feedings, diaper changes, and baby care history.
         </Text>
       </Text>
-
       {/* THIS IS TEMPORARY WILL DELETE LATER */}
       <Link href="/voice-test" style={styles.linkButton}>
         Voice Assistant
@@ -35,7 +33,7 @@ export default function HomeScreen() {
       <Link href="/baby-profiles" style={styles.linkButton}>
         Baby Profiles
       </Link>
-      
+
       <Link href="/manual-feeding" style={styles.linkButton}>
         Manual Feeding Entry
       </Link>
@@ -47,6 +45,8 @@ export default function HomeScreen() {
       <Link href="/history" style={styles.linkButton}>
         View History
       </Link>
+
+      <WakeWordScreen />
     </View>
   );
 }
@@ -89,5 +89,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#000",
   },
-
 });
