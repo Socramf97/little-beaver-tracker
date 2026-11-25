@@ -1,5 +1,6 @@
 
 import { getDatabase } from './database';
+import { cleanupStoredPhotoFiles } from './photoStorage';
 
 export interface Baby {
   id: string;
@@ -68,38 +69,56 @@ export async function updateBaby(
   );
 }
 
-export async function deleteBaby(
-  id: string
-): Promise<void> {
+
+/**
+ * Deletes a baby and all related database records atomically.
+ * Associated photo files are removed only after the
+ * database transaction commits successfully.
+ */
+export async function deleteBaby(id: string): Promise<void> {
+  if (!id.trim()) {
+    throw new Error("A baby ID is required.");
+  }
+
   const db = await getDatabase();
+  let photoFiles: string[] = [];
 
-  await db.runAsync(
-    `DELETE FROM feeding_events
-     WHERE baby_id = ?`,
-    [id]
-  );
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    // Collect photo filenames before deleting their records.
+    const photos = await tx.getAllAsync<{ file_uri: string }>(
+      "SELECT file_uri FROM photo_attachments WHERE baby_id = ?",
+      [id],
+    );
 
-  await db.runAsync(
-    `DELETE FROM diaper_events
-     WHERE baby_id = ?`,
-    [id]
-  );
+    // Delete all records associated with this baby.
+    await tx.runAsync(
+      "DELETE FROM photo_attachments WHERE baby_id = ?",
+      [id],
+    );
 
-  await db.runAsync(
-    `DELETE FROM measurements
-     WHERE baby_id = ?`,
-    [id]
-  );
+    await tx.runAsync(
+      "DELETE FROM feeding_events WHERE baby_id = ?",
+      [id],
+    );
 
-  await db.runAsync(
-    `DELETE FROM photo_attachments
-     WHERE baby_id = ?`,
-    [id]
-  );
+    await tx.runAsync(
+      "DELETE FROM diaper_events WHERE baby_id = ?",
+      [id],
+    );
 
-  await db.runAsync(
-    `DELETE FROM babies
-     WHERE id = ?`,
-    [id]
-  );
+    await tx.runAsync(
+      "DELETE FROM measurements WHERE baby_id = ?",
+      [id],
+    );
+
+    await tx.runAsync(
+      "DELETE FROM babies WHERE id = ?",
+      [id],
+    );
+
+    photoFiles = photos.map((photo) => photo.file_uri);
+  });
+
+  // Runs only after a successful database transaction.
+  cleanupStoredPhotoFiles(photoFiles);
 }
