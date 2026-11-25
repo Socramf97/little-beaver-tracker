@@ -1,4 +1,5 @@
 import { getDatabase } from "./database";
+import { deleteEventAndPhotos } from "./eventDeletion";
 
 export interface DiaperEvent {
   id: string;
@@ -54,25 +55,21 @@ export async function updateDiaperEvent(
   const result = await db.runAsync(
     `UPDATE diaper_events
      SET baby_id = ?, diaper_type = ?, notes = ?, timestamp = ?
-      WHERE id = ?`,
+      WHERE id = ? AND baby_id = ?`,
     [
       event.baby_id,
       event.diaper_type,
       event.notes ?? null,
       event.timestamp,
       event.id,
+      event.baby_id,
     ],
   );
   return result.changes > 0; // False means no changes were made(entry might've been deleted)
 }
 
-export async function deleteDiaperEvent(id: string): Promise<boolean> {
-  const db = await getDatabase();
 
-  const result = await db.runAsync(
-    `DELETE FROM diaper_events
-     WHERE id = ?`,
-    [id],
-  );
-  return result.changes > 0; // False means nothing was deleted (no diaper with that id)
+export async function deleteDiaperEvent(id: string): Promise<boolean> {
+  return deleteEventAndPhotos("diaper", id);
 }
+
