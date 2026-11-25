@@ -1,4 +1,5 @@
 import { getDatabase } from "./database";
+import { deleteEventAndPhotos } from "./eventDeletion";
 
 export interface Measurement {
   id: string;
@@ -60,7 +61,7 @@ export async function updateMeasurement(
     `UPDATE measurements
      SET baby_id = ?, weight_kg = ?, length_cm = ?,
        head_circumference_cm = ?, timestamp = ?
-     WHERE id = ?`,
+     WHERE id = ? AND baby_id = ?`,
     [
       measurement.baby_id,
       measurement.weight_kg ?? null,
@@ -68,18 +69,14 @@ export async function updateMeasurement(
       measurement.head_circumference_cm ?? null,
       measurement.timestamp,
       measurement.id,
+      measurement.baby_id,
     ],
   );
   return result.changes > 0; // False means no changes were made (entry might've been deleted)
 }
 
-export async function deleteMeasurement(id: string): Promise<boolean> {
-  const db = await getDatabase();
 
-  const result = await db.runAsync(
-    `DELETE FROM measurements
-     WHERE id = ?`,
-    [id],
-  );
-  return result.changes > 0; // False means nothing was deleted (no measurement with that id)
+export async function deleteMeasurement(id: string): Promise<boolean> {
+  return deleteEventAndPhotos("measurement", id);
 }
+
