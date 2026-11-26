@@ -23,7 +23,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "package": "com.anonymous.littlebeavertracker"
     },
     "web": {
@@ -32,6 +34,15 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4",
+            "useFrameworks": "dynamic"
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -50,7 +61,9 @@
           ]
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "onnxruntime-react-native",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
