@@ -25,8 +25,8 @@ import {
 } from "../../services/database/photoStorage";
 
 import {
-  createPhotoAttachment
-} from "../../services/database/photos";
+  savePhoto
+} from "../../services/database/photoStorage";
 
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
@@ -415,12 +415,10 @@ useEffect(() => {
           return;
         }
 
-        await createPhotoAttachment({
-          id: Date.now().toString(),
-          baby_id: baby.id,
-          file_uri: result.assets[0].uri,
-        });
-
+        await savePhoto({
+          babyId: baby.id,
+          sourceUri: result.assets[0].uri,
+          });
         const updatedPhotos =
           await listBabyPhotos(baby.id);
 
