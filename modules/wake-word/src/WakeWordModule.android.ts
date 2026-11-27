@@ -31,6 +31,7 @@ let model: WakeWordModel | null = null; // loaded once, reused
 let listening = false; // is the mic running?
 let starting = false; // guards the moment while starting is in progress
 let lastFired = 0; // for the debounce
+let processing: Promise<void> = Promise.resolve();
 
 // Subscriber
 const listeners = new Set<Listener>(); // everyone who wants "onWakeWord"
@@ -49,9 +50,13 @@ async function loadModel() {
   model = m;
 }
 
+function onFrame(frame: number[]) {
+  processing = processing.then(() => processFrame(frame));
+}
+
 // Runs every 80 MS on the audio to check for wake word
-async function onFrame(frame: number[]) {
-  if (!model) return;
+async function processFrame(frame: number[]) {
+  if (!model || !listening) return;
 
   try {
     // model only takes Int16. number[] -> Int 16 -> Model
@@ -101,12 +106,13 @@ const WakeWordAndroid = {
       NativeWakeWord.startBackgroundService();
       // reset the leftover audio from previous session
       model?.reset();
-
+      listening = true;
       voiceProcessor.addFrameListener(onFrame);
       voiceProcessor.addErrorListener(onError);
       await voiceProcessor.start(FRAME_LENGTH, SAMPLE_RATE);
       listening = true;
     } catch (e) {
+      listening = false;
       voiceProcessor.removeFrameListener(onFrame);
       voiceProcessor.removeErrorListener(onError);
       NativeWakeWord.stopBackgroundService();
