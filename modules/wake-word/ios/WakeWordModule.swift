@@ -21,6 +21,17 @@ public class WakeWordModule: Module {
     // Ask for permission -> true/false
     AsyncFunction("requestMicPermission"){ () async -> Bool in 
       let session = AVAudioSession.sharedInstance()
+      do {
+      try session.setCategory(
+        .playAndRecord,
+        mode: .default,
+        options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth]
+      )
+      try session.setActive(true)
+      } catch {
+        print("Failed to set the audio session configuration")
+      }
+      
       if session.recordPermission == .granted {return true}
       return await withCheckedContinuation { cont in
           session.requestRecordPermission { cont.resume(returning: $0) }

@@ -8,6 +8,11 @@ import { File } from "expo-file-system";
 import * as ort from "onnxruntime-react-native";
 import { PermissionsAndroid } from "react-native";
 
+import { requireNativeModule } from "expo";
+
+// Module needs for foreground listening for background to work
+const NativeWakeWord = requireNativeModule("WakeWord");
+
 type Detection = { name: string; confidence: number };
 type Listener = (d: Detection) => void;
 
@@ -26,6 +31,7 @@ let model: WakeWordModel | null = null; // loaded once, reused
 let listening = false; // is the mic running?
 let starting = false; // guards the moment while starting is in progress
 let lastFired = 0; // for the debounce
+let processing: Promise<void> = Promise.resolve();
 
 // Subscriber
 const listeners = new Set<Listener>(); // everyone who wants "onWakeWord"
@@ -44,9 +50,13 @@ async function loadModel() {
   model = m;
 }
 
+function onFrame(frame: number[]) {
+  processing = processing.then(() => processFrame(frame));
+}
+
 // Runs every 80 MS on the audio to check for wake word
-async function onFrame(frame: number[]) {
-  if (!model) return;
+async function processFrame(frame: number[]) {
+  if (!model || !listening) return;
 
   try {
     // model only takes Int16. number[] -> Int 16 -> Model
@@ -76,6 +86,10 @@ const WakeWordAndroid = {
       const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
       );
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      );
+
       return result === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
       console.warn(err);
@@ -89,16 +103,19 @@ const WakeWordAndroid = {
     starting = true;
     try {
       await loadModel();
+      NativeWakeWord.startBackgroundService();
       // reset the leftover audio from previous session
       model?.reset();
-
+      listening = true;
       voiceProcessor.addFrameListener(onFrame);
       voiceProcessor.addErrorListener(onError);
       await voiceProcessor.start(FRAME_LENGTH, SAMPLE_RATE);
       listening = true;
     } catch (e) {
+      listening = false;
       voiceProcessor.removeFrameListener(onFrame);
       voiceProcessor.removeErrorListener(onError);
+      NativeWakeWord.stopBackgroundService();
       throw e;
     } finally {
       starting = false;
@@ -114,7 +131,7 @@ const WakeWordAndroid = {
     voiceProcessor.removeErrorListener(onError);
     // turn mic off
     await voiceProcessor.stop();
-
+    NativeWakeWord.stopBackgroundService();
     model?.reset(); // forget old audio, so the next start begins fresh
   },
 

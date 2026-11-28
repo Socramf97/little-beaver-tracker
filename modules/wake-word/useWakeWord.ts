@@ -21,12 +21,17 @@ type Options = {
 
 const IS_SUPPORTED = Platform.OS === "ios" || Platform.OS === "android";
 
+const KEEP_LISTENING_IN_BACKGROUND =
+  Platform.OS === "ios" || Platform.OS === "android";
+
 export function useWakeWord({ onDetect, enabled = true }: Options) {
   const [status, setStatus] = useState<WakeWordStatus>(
     IS_SUPPORTED ? "idle" : "unsupported",
   );
 
   const [error, setError] = useState<string | null>(null);
+
+  const wantListening = useRef(false);
 
   const onDetectRef = useRef(onDetect);
 
@@ -44,7 +49,11 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
   // 2. start
   const start = useCallback(async () => {
     if (!IS_SUPPORTED) return;
+    wantListening.current = true;
+
     const granted = await WakeWord.requestMicPermission();
+    if (!wantListening.current) return;
+
     setError(null);
     if (!granted) {
       setStatus("denied");
@@ -53,6 +62,11 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
     setStatus("starting");
     try {
       await WakeWord.startListening();
+      if (!wantListening.current) {
+        await WakeWord.stopListening();
+        setStatus("idle");
+        return;
+      }
       setStatus("listening");
     } catch (e: any) {
       setError(e?.message ?? String(e));
@@ -63,6 +77,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
   // 3. stop
   const stop = useCallback(async () => {
     if (!IS_SUPPORTED) return;
+    wantListening.current = false;
     setStatus("stopping");
     await WakeWord.stopListening();
     setStatus("idle");
@@ -81,7 +96,7 @@ export function useWakeWord({ onDetect, enabled = true }: Options) {
 
     const sub = AppState.addEventListener("change", (next) => {
       if (next === "active") start();
-      else if (next === "background") stop();
+      else if (next === "background" && !KEEP_LISTENING_IN_BACKGROUND) stop();
     });
 
     return () => {
