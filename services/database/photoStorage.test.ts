@@ -169,9 +169,9 @@ describe("Photo file storage", () => {
     expect(result).toEqual([
       {
         id: "photo-123",
-        file_uri: "photo-123.jpg",
+        file_uri: "file:///documents/baby-photos/photo-123.jpg",
       },
-  ]);
+    ]);
 });
 
 
@@ -196,13 +196,10 @@ describe("Photo file storage", () => {
     expect(result).toEqual([
       {
         id: "photo-456",
-        file_uri: "photo-456.jpg",
+        file_uri: "file:///documents/baby-photos/photo-456.jpg",
       },
     ]);
   });
-
-
-
 
   test("deletes database record before photo file", async () => {
     mockDelete.mockResolvedValue("photo-123.jpg");
