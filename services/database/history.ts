@@ -1,7 +1,7 @@
 
 import { getDatabase } from './database';
 
-export type HistoryEventType = 'feeding' | 'diaper';
+export type HistoryEventType = 'feeding' | 'diaper' | 'measurement';
 export type HistoryFilter = HistoryEventType | 'all';
 
 export interface HistoryEvent {
@@ -15,6 +15,9 @@ export interface HistoryEvent {
   unit: string | null;
   is_approximate: number | null;
   diaper_type: string | null;
+  weight_kg: number | null;
+  length_cm: number | null;
+  head_circumference_cm: number | null;
 }
 
 export interface HistoryOptions {
@@ -31,7 +34,7 @@ function validateOptions(options: HistoryOptions): void {
 
   if (
     options.type !== undefined &&
-    !['all', 'feeding', 'diaper'].includes(options.type)
+    !['all', 'feeding', 'diaper', 'measurement'].includes(options.type)
   ) {
     throw new Error('Invalid history event type.');
   }
@@ -71,7 +74,10 @@ export async function getEventHistory(
         id, baby_id, 'feeding' AS event_type,
         timestamp, notes, feeding_type, amount,
         unit, is_approximate,
-        NULL AS diaper_type
+        NULL AS diaper_type,
+        NULL AS weight_kg,
+        NULL AS length_cm,
+        NULL AS head_circumference_cm
       FROM feeding_events
       WHERE baby_id = ?
     `);
@@ -87,12 +93,38 @@ export async function getEventHistory(
         NULL AS amount,
         NULL AS unit,
         NULL AS is_approximate,
-        diaper_type
+        diaper_type,
+        NULL AS weight_kg,
+        NULL AS length_cm,
+        NULL AS head_circumference_cm
       FROM diaper_events
       WHERE baby_id = ?
     `);
     params.push(options.babyId);
   }
+
+  if (type === 'all' || type === 'measurement') {
+  queries.push(`
+    SELECT
+      id,
+      baby_id,
+      'measurement' AS event_type,
+      timestamp,
+      NULL AS notes,
+      NULL AS feeding_type,
+      NULL AS amount,
+      NULL AS unit,
+      NULL AS is_approximate,
+      NULL AS diaper_type,
+      weight_kg,
+      length_cm,
+      head_circumference_cm
+    FROM measurements
+    WHERE baby_id = ?
+  `);
+
+  params.push(options.babyId);
+}
 
   const conditions: string[] = [];
 

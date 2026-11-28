@@ -1,8 +1,11 @@
 // Baby profile management screen
 
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   Button,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,10 +19,20 @@ import {
   updateBaby,
 } from "../../services/database/babies";
 import { createMeasurement, getMeasurementsByBaby } from "../../services/database/measurements";
+import {
+  listBabyPhotos,
+  removePhoto
+} from "../../services/database/photoStorage";
+
+import {
+  savePhoto
+} from "../../services/database/photoStorage";
+
 import { useActiveBaby } from "../hooks/useActiveBaby";
 
 export default function BabyProfilesScreen() {
 
+// State used for creating, editing and managing baby profiles.
 const [babyName, setBabyName] = useState("");
 
 const [birthDate, setBirthDate] = useState("");
@@ -51,6 +64,8 @@ const [deleteConfirmationId, setDeleteConfirmationId] =
 
 const [babies, setBabies] = useState<Baby[]>([]);
 
+// Stores the latest measurement record for each baby.
+// Keyed by baby ID.
 const [latestMeasurements, setLatestMeasurements] =
   useState<Record<string, any>>({});
 
@@ -58,12 +73,16 @@ const [latestMeasurements, setLatestMeasurements] =
 // use the same selection throughout the app.
 const { activeBaby, setActiveBaby } = useActiveBaby();
 
+// Stores photos associated with each baby profile.
+// Keyed by baby ID.
+const [babyPhotos, setBabyPhotos] =
+  useState<Record<string, any[]>>({});
+
+// Load baby profiles, latest measurements, and photos when screen first opens.
 useEffect(() => {
   async function initializeBabies() {
     try {
       const allBabies = await getAllBabies();
-
-      console.log("Babies loaded:", allBabies);
 
       setBabies(allBabies);
 
@@ -81,6 +100,15 @@ useEffect(() => {
 
       setLatestMeasurements(measurementsMap);
 
+      const photosMap: Record<string, any[]> = {};
+
+      for (const baby of allBabies) {
+        photosMap[baby.id] =
+          await listBabyPhotos(baby.id);
+      }
+
+      setBabyPhotos(photosMap);
+
     } catch (error) {
       console.error(
         "Failed loading babies:",
@@ -93,7 +121,7 @@ useEffect(() => {
 }, []);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.sectionHeader}>
          Baby Profiles
       </Text>
@@ -102,10 +130,18 @@ useEffect(() => {
         Active Baby: {activeBaby ? activeBaby.name : "None Selected"}
       </Text>
 
+      {activeBaby && (
+        <Button
+          title="Clear Active Baby"
+          onPress={() => setActiveBaby(null)}
+        />
+      )}
+
       <Text style={styles.note}>
         Baby ID: {activeBaby ? activeBaby.id : "None"}
       </Text>
 
+{/* Display each baby profile and its related information */}
 {babies.map((baby) => (
   <View key={baby.id} style={styles.babyCard}>
     <Text style={styles.sectionHeader}>
@@ -141,6 +177,36 @@ useEffect(() => {
   </>
 )}
 
+{/* Display saved photos associated with this baby profile. */}
+{babyPhotos[baby.id]?.map((photo) => (
+  <View key={photo.id}>
+    <Image
+      source={{ uri: photo.file_uri }}
+      style={{
+        width: 120,
+        height: 120,
+        marginVertical: 5,
+      }}
+    />
+
+    <Button
+      title="Delete Photo"
+      onPress={async () => {
+        await removePhoto(photo.id);
+
+        const updatedPhotos =
+          await listBabyPhotos(baby.id);
+
+        setBabyPhotos({
+          ...babyPhotos,
+          [baby.id]: updatedPhotos,
+        });
+      }}
+    />
+  </View>
+))}
+
+{/* Edit mode allows updating a baby's name and birth date. */}
 {editingBabyId === baby.id && (
   <>
     <TextInput
@@ -162,6 +228,19 @@ useEffect(() => {
       onPress={async () => {
         if (!editedName.trim()) return;
 
+        if (
+          editedBirthDate &&
+          !/^\d{4}-\d{2}-\d{2}$/.test(
+            editedBirthDate
+          )
+        ) {
+          alert(
+            "Please enter birth date as YYYY-MM-DD"
+          );
+
+          return;
+        }
+
         await updateBaby(
           baby.id,
           editedName,
@@ -178,22 +257,11 @@ useEffect(() => {
           const measurements =
             await getMeasurementsByBaby(baby.id);
 
-          console.log(
-            "Measurements for",
-            baby.name,
-            measurements
-          );
-
           if (measurements.length > 0) {
             measurementsMap[baby.id] =
               measurements[0];
           }
         }
-
-        console.log(
-          "Measurements map:",
-          measurementsMap
-        );
 
         setLatestMeasurements(measurementsMap);
 
@@ -234,6 +302,7 @@ useEffect(() => {
       />
     )}
 
+    {/* Add measurement entry for the selected baby. */}
     {addingMeasurementId !== baby.id && (
       <Button
         title="Add Measurement"
@@ -276,6 +345,19 @@ useEffect(() => {
         ) {
           return;
         }
+
+        if (
+          (newWeight && Number(newWeight) <= 0) ||
+          (newLength && Number(newLength) <= 0) ||
+          (newHeadCircumference &&
+            Number(newHeadCircumference) <= 0)
+        ) {
+          alert(
+            "Measurements must be greater than zero"
+          );
+
+          return;
+        }
         await createMeasurement({
           id: Date.now().toString(),
           baby_id: baby.id,
@@ -293,11 +375,6 @@ useEffect(() => {
 
         const measurements =
           await getMeasurementsByBaby(baby.id);
-
-        console.log(
-          "Measurement history:",
-          measurements
-        );
 
         if (measurements.length > 0) {
           setLatestMeasurements({
@@ -324,7 +401,34 @@ useEffect(() => {
     />
   </>
 )}
+    {/* Select and attach a photo to the current baby profile. */}
+    <Button
+      title="Add Photo"
+      onPress={async () => {
+        const result =
+          await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            quality: 0.8,
+          });
 
+        if (result.canceled) {
+          return;
+        }
+
+        await savePhoto({
+          babyId: baby.id,
+          sourceUri: result.assets[0].uri,
+          });
+        const updatedPhotos =
+          await listBabyPhotos(baby.id);
+
+        setBabyPhotos({
+          ...babyPhotos,
+          [baby.id]: updatedPhotos,
+        });
+      }}
+    />
+    {/* Confirm before permanently deleting a baby profile. */}
     {deleteConfirmationId === baby.id && (
   <>
     <Text style={styles.note}>
@@ -387,6 +491,7 @@ useEffect(() => {
   </View>
 ))}
 
+{/* Form used to create a new baby profile and optional measurement record. */}
 <Text style={styles.sectionHeader}>
   Add New Baby
 </Text>
@@ -426,10 +531,49 @@ useEffect(() => {
   onChangeText={setHeadCircumferenceCm}
 />
 
+<Text style={styles.note}>
+  Measurements are optional and can be added or updated later.
+</Text>
+
+{/* Validate user input, create baby profile, and save initial measurement if provided. */}
 <Button
   title="Create Baby"
   onPress={async () => {
-    if (!babyName.trim()) return;
+    if (!babyName.trim()) {
+      alert("Please enter a baby name");
+      return;
+    }
+
+    if (!birthDate.trim()) {
+      alert("Please enter a birth date");
+      return;
+    }
+
+    if (
+      birthDate &&
+      !/^\d{4}-\d{2}-\d{2}$/.test(
+        birthDate
+      )
+    ) {
+      alert(
+        "Please enter birth date as YYYY-MM-DD"
+      );
+
+      return;
+    }
+
+    if (
+      (weightKg && Number(weightKg) <= 0) ||
+      (lengthCm && Number(lengthCm) <= 0) ||
+      (headCircumferenceCm &&
+        Number(headCircumferenceCm) <= 0)
+    ) {
+      alert(
+        "Measurements must be greater than zero"
+      );
+
+      return;
+    }
 
     const newBaby = {
       id: Date.now().toString(),
@@ -485,15 +629,13 @@ useEffect(() => {
     setHeadCircumferenceCm("");
   }}
 />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
-    justifyContent: "center",
     alignItems: "center",
   },
 

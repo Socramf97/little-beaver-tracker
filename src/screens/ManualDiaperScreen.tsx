@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 export default function ManualDiaperScreen() {
+  // State used to capture manual diaper event details.
   const [diaperType, setDiaperType] = useState("");
   const [notes, setNotes] = useState("");
   
@@ -26,6 +27,7 @@ export default function ManualDiaperScreen() {
         Manual Diaper Entry
       </Text>
 
+     {/* Diaper type selection */}
      <Picker
         selectedValue={diaperType}
         onValueChange={(itemValue) => setDiaperType(itemValue)}
@@ -44,6 +46,7 @@ export default function ManualDiaperScreen() {
       />
 
       <View style={sharedStyles.buttonContainer}>
+        {/* Validate input and create a diaper event for the active baby. */}
         <Button
           title="Save Diaper Event"
           onPress={async () => {
