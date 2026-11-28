@@ -172,7 +172,7 @@ describe("Photo file storage", () => {
         id: "photo-123",
         file_uri: "file:///documents/baby-photos/photo-123.jpg",
       },
-  ]);
+    ]);
 });
 
 
@@ -201,9 +201,6 @@ describe("Photo file storage", () => {
       },
     ]);
   });
-
-
-
 
   test("deletes database record before photo file", async () => {
     mockDelete.mockResolvedValue("photo-123.jpg");

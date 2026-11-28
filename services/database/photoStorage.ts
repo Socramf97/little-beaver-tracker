@@ -126,6 +126,7 @@ export async function savePhoto(
 export async function listBabyPhotos(
   babyId: string,
 ): Promise<PhotoAttachment[]> {
+
   const photos = await getPhotosByBaby(babyId);
 
   return photos.map((photo) => ({
@@ -141,6 +142,7 @@ export async function listEventPhotos(
   eventId: string,
   eventType: PhotoEventType,
 ): Promise<PhotoAttachment[]> {
+
   const photos = await getPhotosByEvent(eventId, eventType);
 
   return photos.map((photo) => ({
