@@ -15,6 +15,7 @@ const mockGetDatabase = getDatabase as jest.Mock;
 const mockRunAsync = jest.fn();
 const mockGetFirstAsync = jest.fn();
 const mockGetAllAsync = jest.fn();
+const mockTransaction = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,7 +24,17 @@ beforeEach(() => {
     runAsync: mockRunAsync,
     getFirstAsync: mockGetFirstAsync,
     getAllAsync: mockGetAllAsync,
+    withExclusiveTransactionAsync: mockTransaction,
   });
+
+  mockTransaction.mockImplementation(async (callback) =>
+    callback({
+      getFirstAsync: mockGetFirstAsync,
+      runAsync: mockRunAsync,
+    }),
+  );
+
+  mockGetFirstAsync.mockResolvedValue({ id: "baby-123" });
 
   mockRunAsync.mockResolvedValue({ changes: 1 });
   mockGetAllAsync.mockResolvedValue([]);
@@ -33,7 +44,7 @@ describe("Photo attachment database operations", () => {
   const photo = {
     id: "photo-123",
     baby_id: "baby-123",
-    file_uri: "file:///photos/photo-123.jpg",
+    file_uri: "photo-123.jpg",
     created_at: "2026-11-13T12:00:00.000Z",
   };
 
@@ -56,13 +67,17 @@ describe("Photo attachment database operations", () => {
   });
 
   test("validates an event belongs to the baby", async () => {
-    mockGetFirstAsync.mockResolvedValue({ id: "feeding-1" });
+    mockGetFirstAsync
+      .mockResolvedValueOnce({ id: "baby-123" })
+      .mockResolvedValueOnce({ id: "feeding-1" });
 
     await createPhotoAttachment({
       ...photo,
       event_id: "feeding-1",
       event_type: "feeding",
     });
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
 
     expect(mockGetFirstAsync).toHaveBeenCalledWith(
       expect.stringContaining("FROM feeding_events"),
@@ -73,7 +88,9 @@ describe("Photo attachment database operations", () => {
   });
 
   test("rejects an event belonging to another baby", async () => {
-    mockGetFirstAsync.mockResolvedValue(null);
+    mockGetFirstAsync
+      .mockResolvedValueOnce({ id: "baby-123" })
+      .mockResolvedValueOnce(null);
 
     await expect(
       createPhotoAttachment({
@@ -84,6 +101,16 @@ describe("Photo attachment database operations", () => {
     ).rejects.toThrow(
       "Event does not exist or belongs to another baby.",
     );
+
+    expect(mockRunAsync).not.toHaveBeenCalled();
+  });
+  
+  test("rejects photo metadata for a missing baby", async () => {
+    mockGetFirstAsync.mockResolvedValue(null);
+
+    await expect(
+      createPhotoAttachment(photo),
+    ).rejects.toThrow("Baby does not exist.");
 
     expect(mockRunAsync).not.toHaveBeenCalled();
   });

@@ -39,7 +39,6 @@ export const CREATE_TABLES_SQL = `
     timestamp TEXT NOT NULL,
     FOREIGN KEY (baby_id) REFERENCES babies(id)
   );
-
   
   CREATE TABLE IF NOT EXISTS photo_attachments (
     id TEXT PRIMARY KEY NOT NULL,
@@ -59,4 +58,16 @@ export const CREATE_TABLES_SQL = `
 
   CREATE INDEX IF NOT EXISTS idx_photo_attachments_baby
     ON photo_attachments(baby_id);
+  
+  CREATE INDEX IF NOT EXISTS idx_photo_attachments_event
+    ON photo_attachments(event_id, event_type);
+
+  CREATE INDEX IF NOT EXISTS idx_feedings_baby_timestamp
+    ON feeding_events(baby_id, timestamp);
+
+  CREATE INDEX IF NOT EXISTS idx_diapers_baby_timestamp
+    ON diaper_events(baby_id, timestamp);
+
+  CREATE INDEX IF NOT EXISTS idx_measurements_baby_timestamp
+    ON measurements(baby_id, timestamp);
 `;

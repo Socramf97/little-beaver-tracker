@@ -3,15 +3,22 @@ import {
     createBaby,
     getAllBabies,
     getBabyById,
+    deleteBaby,
 } from "./babies";
 import { getDatabase } from "./database";
+import { cleanupStoredPhotoFiles } from "./photoStorage";
 
 jest.mock("./database", () => ({
   getDatabase: jest.fn(),
 }));
 
+jest.mock("./photoStorage", () => ({
+  cleanupStoredPhotoFiles: jest.fn(),
+}));
+
 const mockGetDatabase = getDatabase as jest.Mock;
 
+const mockTransaction = jest.fn();
 const mockRunAsync = jest.fn();
 const mockGetFirstAsync = jest.fn();
 const mockGetAllAsync = jest.fn();
@@ -23,7 +30,17 @@ beforeEach(() => {
     runAsync: mockRunAsync,
     getFirstAsync: mockGetFirstAsync,
     getAllAsync: mockGetAllAsync,
+    withExclusiveTransactionAsync: mockTransaction,
   });
+
+  mockGetAllAsync.mockResolvedValue([]);
+
+  mockTransaction.mockImplementation(async (callback) =>
+    callback({
+      getAllAsync: mockGetAllAsync,
+      runAsync: mockRunAsync,
+    }),
+  );
 
   mockRunAsync.mockResolvedValue({ changes: 1 });
 });
@@ -116,6 +133,72 @@ describe("Baby database operations", () => {
     const result = await getAllBabies();
 
     expect(result).toEqual([]);
+  });
+
+
+  test("deletes baby and related data in one transaction", async () => {
+    mockGetAllAsync.mockResolvedValue([
+      { file_uri: "photo-a.jpg" },
+      { file_uri: "photo-b.png" },
+    ]);
+
+    await deleteBaby("baby-123");
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+
+    expect(mockGetAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("FROM photo_attachments"),
+      ["baby-123"],
+    );
+
+    expect(mockRunAsync.mock.calls.map(([sql]) => sql)).toEqual([
+      expect.stringContaining("DELETE FROM photo_attachments"),
+      expect.stringContaining("DELETE FROM feeding_events"),
+      expect.stringContaining("DELETE FROM diaper_events"),
+      expect.stringContaining("DELETE FROM measurements"),
+      expect.stringContaining("DELETE FROM babies"),
+    ]);
+
+    expect(
+      mockRunAsync.mock.calls.every(
+        ([, params]) => params.length === 1 && params[0] === "baby-123",
+      ),
+    ).toBe(true);
+
+    expect(cleanupStoredPhotoFiles).toHaveBeenCalledWith([
+      "photo-a.jpg",
+      "photo-b.png",
+    ]);
+
+    const sqlCallOrder = mockRunAsync.mock.invocationCallOrder;
+
+    expect(sqlCallOrder[sqlCallOrder.length - 1]).toBeLessThan(
+      (cleanupStoredPhotoFiles as jest.Mock).mock.invocationCallOrder[0],
+    );
+  });
+
+  test("does not remove photos if a database deletion fails", async () => {
+    mockGetAllAsync.mockResolvedValue([
+      { file_uri: "photo-a.jpg" },
+    ]);
+
+    mockRunAsync.mockRejectedValueOnce(
+      new Error("Transaction failed"),
+    );
+
+    await expect(
+      deleteBaby("baby-123"),
+    ).rejects.toThrow("Transaction failed");
+
+    expect(cleanupStoredPhotoFiles).not.toHaveBeenCalled();
+  });
+
+  test("rejects blank baby IDs before starting a transaction", async () => {
+    await expect(
+      deleteBaby(" "),
+    ).rejects.toThrow("A baby ID is required.");
+
+    expect(mockGetDatabase).not.toHaveBeenCalled();
   });
 
   test("propagates database errors", async () => {

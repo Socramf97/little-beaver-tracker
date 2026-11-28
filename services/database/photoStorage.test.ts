@@ -3,6 +3,7 @@ import * as Crypto from "expo-crypto";
 import { Directory, File } from "expo-file-system";
 
 import {
+  cleanupStoredPhotoFiles,
   listBabyPhotos,
   listEventPhotos,
   removePhoto,
@@ -272,4 +273,49 @@ describe("Photo file storage", () => {
       warnSpy.mockRestore();
     }
   });
+  
+  test("does not delete absolute or unsafe paths", () => {
+    const warnSpy = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => {});
+
+    try {
+      cleanupStoredPhotoFiles([
+        "file:///cache/original.jpg",
+        "../original.jpg",
+        "image.jpg/../../original.jpg",
+      ]);
+
+      expect(mockFileDelete).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledTimes(3);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test("deduplicates managed file cleanup", () => {
+    cleanupStoredPhotoFiles([
+      "photo-123.jpg",
+      "photo-123.jpg",
+    ]);
+
+    expect(mockFileDelete).toHaveBeenCalledTimes(1);
+  });
+
+  test("cleans up a partially copied file on copy failure", async () => {
+    mockCopy.mockImplementationOnce(() => {
+      throw new Error("Copy failed");
+    });
+
+    await expect(
+      savePhoto({
+        babyId: "baby-123",
+        sourceUri: "file:///cache/broken.jpg",
+      }),
+    ).rejects.toThrow("Copy failed");
+
+    expect(mockFileDelete).toHaveBeenCalledTimes(1);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+  
 });

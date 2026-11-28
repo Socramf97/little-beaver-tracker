@@ -26,7 +26,7 @@ export interface DailySummary {
 
 /**
  * Returns feeding and diaper activity for one baby
- * on a specific UTC calendar day (YYYY-MM-DD).
+ * on a specific device-local calendar day (YYYY-MM-DD).
  */
 export async function getDailySummary(
   babyId: string,
