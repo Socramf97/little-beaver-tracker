@@ -1,4 +1,5 @@
 import { getDatabase } from "./database";
+import { deleteEventAndPhotos } from "./eventDeletion";
 
 export interface FeedingEvent {
   id: string;
@@ -67,7 +68,7 @@ export async function updateFeedingEvent(
     `UPDATE feeding_events
      SET baby_id = ?, feeding_type = ?, amount = ?, unit = ?,
        is_approximate = ?, notes = ?, timestamp = ?
-      WHERE id = ?`,
+      WHERE id = ? AND baby_id = ?`,
     [
       event.baby_id,
       event.feeding_type,
@@ -77,18 +78,13 @@ export async function updateFeedingEvent(
       event.notes ?? null,
       event.timestamp,
       event.id,
+      event.baby_id,
     ],
   );
   return result.changes > 0; // False means no changes were made(entry might've been deleted)
 }
 
 export async function deleteFeedingEvent(id: string): Promise<boolean> {
-  const db = await getDatabase();
-
-  const result = await db.runAsync(
-    `DELETE FROM feeding_events
-     WHERE id = ?`,
-    [id],
-  );
-  return result.changes > 0; // False means nothing was deleted (no feeding with that id)
+  return deleteEventAndPhotos("feeding", id);
 }
+

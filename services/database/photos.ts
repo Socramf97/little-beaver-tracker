@@ -54,42 +54,54 @@ export async function createPhotoAttachment(
     );
   }
 
+
   const db = await getDatabase();
 
-  if (eventId !== null && eventType !== null) {
-    const table = EVENT_TABLES[eventType];
-
-    if (!table) {
-      throw new Error("Unsupported event type.");
-    }
-
-    const event = await db.getFirstAsync<{ id: string }>(
-      `SELECT id FROM ${table}
-       WHERE id = ? AND baby_id = ?`,
-      [eventId, photo.baby_id],
+  // Validate the baby and event within the same transaction
+  // used to create the photo attachment.
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const baby = await tx.getFirstAsync<{ id: string }>(
+      "SELECT id FROM babies WHERE id = ?",
+      [photo.baby_id],
     );
 
-    if (!event) {
-      throw new Error(
-        "Event does not exist or belongs to another baby.",
-      );
+    if (!baby) {
+      throw new Error("Baby does not exist.");
     }
-  }
 
-  await db.runAsync(
-    `INSERT INTO photo_attachments
-       (id, baby_id, event_id, event_type,
-        file_uri, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      photo.id,
-      photo.baby_id,
-      eventId,
-      eventType,
-      photo.file_uri,
-      photo.created_at ?? new Date().toISOString(),
-    ],
-  );
+    if (eventId !== null && eventType !== null) {
+      const table = EVENT_TABLES[eventType];
+
+      if (!table) {
+        throw new Error("Unsupported event type.");
+      }
+
+      const event = await tx.getFirstAsync<{ id: string }>(
+        `SELECT id FROM ${table} WHERE id = ? AND baby_id = ?`,
+        [eventId, photo.baby_id],
+      );
+
+      if (!event) {
+        throw new Error(
+          "Event does not exist or belongs to another baby.",
+        );
+      }
+    }
+
+    await tx.runAsync(
+      `INSERT INTO photo_attachments
+         (id, baby_id, event_id, event_type, file_uri, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        photo.id,
+        photo.baby_id,
+        eventId,
+        eventType,
+        photo.file_uri,
+        photo.created_at ?? new Date().toISOString(),
+      ],
+    );
+  });
 }
 
 /**
@@ -125,12 +137,6 @@ export async function getPhotosByEvent(
   );
 }
 
-/**
- * Deletes an attachment record and returns its URI.
- * The calling file-storage service can then delete
- * the corresponding image file.
- */
-
 
 export async function getPhotoById(
   id: string,
@@ -142,6 +148,12 @@ export async function getPhotoById(
     [id],
   );
 }
+
+/**
+ * Deletes an attachment record and returns its URI.
+ * The calling file-storage service can then delete
+ * the corresponding image file.
+ */
 
 export async function deletePhotoAttachment(
   id: string,

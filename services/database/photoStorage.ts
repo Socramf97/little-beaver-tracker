@@ -21,6 +21,32 @@ function resolvePhotoUri(filename: string): string {
   ).uri;
 }
 
+
+/**
+ * Deletes photos from our managed storage directory.
+ * Only accepts filenames, not absolute paths.
+ * Call after the database transaction commits.
+ */
+export function cleanupStoredPhotoFiles(filenames: string[]): void {
+  for (const filename of new Set(filenames)) {
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*\.(jpg|jpeg|png|webp|heic)$/i.test(filename)) {
+      console.warn("Skipping unmanaged photo path during cleanup:", filename);
+      continue;
+    }
+
+    try {
+      const file = new File(
+        new Directory(Paths.document, PHOTO_DIRECTORY),
+        filename,
+      );
+
+      if (file.exists) file.delete();
+    } catch (error) {
+      console.warn("Photo record deleted, but file cleanup failed:", error);
+    }
+  }
+}
+
 export interface SavePhotoInput {
   babyId: string;
   sourceUri: string;
@@ -65,9 +91,9 @@ export async function savePhoto(
   const source = new File(input.sourceUri);
 
   // Copy rather than move: the original photo remains intact.
-  source.copy(destination);
-
+  // Clean up a partial copy if either operation fails.
   try {
+    source.copy(destination);
     await createPhotoAttachment({
       id: photoId,
       baby_id: input.babyId,
@@ -77,13 +103,13 @@ export async function savePhoto(
       created_at: createdAt,
     });
   } catch (error) {
-    // Avoid leaving an orphaned file if database insertion fails.
-    if (destination.exists) {
-      destination.delete();
+    try {
+      if (destination.exists) destination.delete();
+    } catch (cleanupError) {
+      console.warn("Could not clean up failed photo copy:", cleanupError);
     }
     throw error;
   }
-
   return {
     id: photoId,
     baby_id: input.babyId,
@@ -142,20 +168,8 @@ export async function removePhoto(photoId: string): Promise<boolean> {
     return false;
   }
 
-  // Then clean up the physical file.
-  try {
-    const file = new File(
-      new Directory(Paths.document, PHOTO_DIRECTORY),
-      filename,
-    );
-
-    if (file.exists) {
-      file.delete();
-    }
-  } catch (error) {
-    // The database record is already gone, so there's no broken reference.
-    console.warn("Photo record deleted, but file cleanup failed:", error);
-  }
+  // Remove the managed image file after deleting its DB record.
+  cleanupStoredPhotoFiles([filename]);
 
   return true;
 }

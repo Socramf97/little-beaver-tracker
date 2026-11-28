@@ -7,6 +7,10 @@ import {
     updateFeedingEvent,
 } from "./feedings";
 
+jest.mock("./photoStorage", () => ({
+  cleanupStoredPhotoFiles: jest.fn(),
+}));
+
 jest.mock("./database", () => ({
   getDatabase: jest.fn(),
 }));
@@ -14,14 +18,23 @@ jest.mock("./database", () => ({
 const mockGetDatabase = getDatabase as jest.Mock;
 const mockRunAsync = jest.fn();
 const mockGetAllAsync = jest.fn();
+const mockTransaction = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
 
-  mockGetDatabase.mockResolvedValue({
+mockGetDatabase.mockResolvedValue({
+  runAsync: mockRunAsync,
+  getAllAsync: mockGetAllAsync,
+  withExclusiveTransactionAsync: mockTransaction,
+});
+
+mockTransaction.mockImplementation(async (callback) =>
+  callback({
     runAsync: mockRunAsync,
     getAllAsync: mockGetAllAsync,
-  });
+  }),
+);
 
   mockRunAsync.mockResolvedValue({ changes: 1 });
   mockGetAllAsync.mockResolvedValue([]);
@@ -104,9 +117,10 @@ describe("Feeding event database operations", () => {
     const [sql, params] = mockRunAsync.mock.calls[0];
 
     expect(sql).toContain("UPDATE feeding_events");
-    expect(sql).toContain("WHERE id = ?");
+    expect(sql).toContain("WHERE id = ? AND baby_id = ?");
     expect(params[2]).toBe(150);
     expect(params[7]).toBe("feeding-123");
+    expect(params[8]).toBe("baby-123");
   });
 
   test("returns false when an update affects no records", async () => {
